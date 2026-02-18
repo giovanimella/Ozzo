@@ -107,29 +107,25 @@ export default function CommissionsPage() {
       title: 'Total Disponível',
       value: formatCurrency(summary?.available_balance || 0),
       icon: DollarSign,
-      color: 'success',
-      subtitle: 'Pronto para saque'
+      color: 'green'
     },
     {
       title: 'Total Bloqueado',
       value: formatCurrency(summary?.blocked_balance || 0),
       icon: Clock,
-      color: 'warning',
-      subtitle: 'Aguardando liberação (7 dias)'
+      color: 'amber'
     },
     {
       title: 'Este Mês',
       value: formatCurrency(summary?.this_month || 0),
       icon: Calendar,
-      color: 'primary',
-      subtitle: 'Comissões do mês atual'
+      color: 'blue'
     },
     {
       title: 'Total de Transações',
       value: total,
       icon: Layers,
-      color: 'purple',
-      subtitle: 'Comissões recebidas'
+      color: 'purple'
     }
   ];
 
