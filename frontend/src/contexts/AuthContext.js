@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-const API_URL = process.env.REACT_APP_BACKEND_URL;
+// Use relative URL for same-origin requests (works with Kubernetes ingress)
+// Falls back to env variable for external API calls
+const API_URL = process.env.REACT_APP_BACKEND_URL || '';
 
 const AuthContext = createContext(null);
 
