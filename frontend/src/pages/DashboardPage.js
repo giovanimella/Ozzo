@@ -1,23 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth, ACCESS_LEVELS } from '../contexts/AuthContext';
-import DashboardLayout from '../components/layouts/DashboardLayout';
-import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
-import { Badge } from '../components/ui/Badge';
-import { Button } from '../components/ui/Button';
+import AppLayout, { StatCard, DashCard, ProgressCard } from '../components/layout/AppLayout';
 import { formatCurrency, formatDate } from '../lib/utils';
 import { 
   Users, TrendingUp, Wallet, ShoppingBag, 
-  ArrowUpRight, ArrowDownRight, Copy, ExternalLink,
-  AlertCircle, CheckCircle, Clock
+  ArrowUpRight, Copy, ExternalLink, Target,
+  Calendar, Trophy, Clock, Package, DollarSign,
+  BarChart3, PieChart, Activity, Zap
 } from 'lucide-react';
 import { toast } from '../components/ui/toast';
+import { 
+  AreaChart, Area, BarChart, Bar, LineChart, Line,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart as RechartsPie, Pie, Cell
+} from 'recharts';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
+
+const CHART_COLORS = ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 export default function DashboardPage() {
   const { user, token, accessLevel } = useAuth();
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
   useEffect(() => {
     fetchDashboardData();
@@ -46,294 +52,343 @@ export default function DashboardPage() {
     toast.success('Link copiado!');
   };
 
+  // Mock data for charts
+  const salesData = [
+    { name: 'Seg', vendas: 1200, comissoes: 120 },
+    { name: 'Ter', vendas: 1800, comissoes: 180 },
+    { name: 'Qua', vendas: 1400, comissoes: 140 },
+    { name: 'Qui', vendas: 2200, comissoes: 220 },
+    { name: 'Sex', vendas: 1900, comissoes: 190 },
+    { name: 'Sáb', vendas: 2800, comissoes: 280 },
+    { name: 'Dom', vendas: 1600, comissoes: 160 },
+  ];
+
+  const networkData = [
+    { name: 'Admin', value: dashboardData?.users?.admin || 1, color: '#2563eb' },
+    { name: 'Supervisor', value: dashboardData?.users?.supervisor || 2, color: '#10b981' },
+    { name: 'Líder', value: dashboardData?.users?.leader || 5, color: '#f59e0b' },
+    { name: 'Revendedor', value: dashboardData?.users?.reseller || 15, color: '#8b5cf6' },
+    { name: 'Cliente', value: dashboardData?.users?.client || 50, color: '#64748b' },
+  ];
+
+  const recentActivities = [
+    { icon: ShoppingBag, text: 'Novo pedido recebido', time: '2 min atrás', color: 'blue' },
+    { icon: Users, text: 'Novo revendedor cadastrado', time: '15 min atrás', color: 'green' },
+    { icon: DollarSign, text: 'Comissão liberada', time: '1 hora atrás', color: 'amber' },
+    { icon: Trophy, text: 'Meta atingida!', time: '3 horas atrás', color: 'purple' },
+  ];
+
   if (loading) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="w-8 h-8 border-4 border-primary-main border-t-transparent rounded-full spinner" />
+      <AppLayout title="Dashboard">
+        <div className="flex items-center justify-center h-96">
+          <div className="w-10 h-10 border-4 border-brand-main border-t-transparent rounded-full animate-spin" />
         </div>
-      </DashboardLayout>
+      </AppLayout>
     );
   }
 
-  // Admin Dashboard
-  if (accessLevel <= 1) {
-    return (
-      <DashboardLayout>
-        <div className="space-y-8">
-          <div>
-            <h1 className="font-heading font-bold text-2xl text-primary-main mb-2" data-testid="dashboard-title">
-              Dashboard Administrativo
-            </h1>
-            <p className="text-slate-600">Visão geral do sistema</p>
-          </div>
+  const isAdmin = accessLevel <= 1;
 
-          {/* Main Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="fade-in">
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-slate-500">Faturamento do Mês</p>
-                    <p className="text-2xl font-heading font-bold text-primary-main mt-1">
-                      {formatCurrency(dashboardData?.orders_this_month?.total || 0)}
-                    </p>
-                    <p className="text-sm text-slate-500 mt-1">
-                      {dashboardData?.orders_this_month?.count || 0} pedidos
-                    </p>
-                  </div>
-                  <div className="w-12 h-12 gold-gradient rounded-xl flex items-center justify-center">
-                    <TrendingUp className="w-6 h-6 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="fade-in stagger-1">
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-slate-500">Comissões Pendentes</p>
-                    <p className="text-2xl font-heading font-bold text-primary-main mt-1">
-                      {formatCurrency(dashboardData?.commissions?.pending || 0)}
-                    </p>
-                  </div>
-                  <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
-                    <Clock className="w-6 h-6 text-amber-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="fade-in stagger-2">
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-slate-500">Revendedores Ativos</p>
-                    <p className="text-2xl font-heading font-bold text-primary-main mt-1">
-                      {dashboardData?.active_resellers || 0}
-                    </p>
-                    <p className="text-sm text-red-500 mt-1">
-                      {dashboardData?.suspended_resellers || 0} suspensos
-                    </p>
-                  </div>
-                  <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
-                    <Users className="w-6 h-6 text-emerald-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="fade-in stagger-3">
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-slate-500">Saques Pendentes</p>
-                    <p className="text-2xl font-heading font-bold text-primary-main mt-1">
-                      {formatCurrency(dashboardData?.withdrawals_pending?.total || 0)}
-                    </p>
-                    <p className="text-sm text-slate-500 mt-1">
-                      {dashboardData?.withdrawals_pending?.count || 0} solicitações
-                    </p>
-                  </div>
-                  <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                    <Wallet className="w-6 h-6 text-blue-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* User Breakdown */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Usuários por Tipo</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-                {Object.entries(ACCESS_LEVELS).map(([level, info]) => (
-                  <div key={level} className="text-center p-4 bg-slate-50 rounded-lg">
-                    <p className="text-2xl font-heading font-bold text-primary-main">
-                      {dashboardData?.user_counts?.[info.slug] || 0}
-                    </p>
-                    <p className="text-xs text-slate-500 mt-1">{info.name}</p>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  // Reseller/Leader Dashboard
   return (
-    <DashboardLayout>
-      <div className="space-y-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="font-heading font-bold text-2xl text-primary-main" data-testid="dashboard-title">
-              Olá, {user?.name?.split(' ')[0]}!
-            </h1>
-            <p className="text-slate-600">
-              {ACCESS_LEVELS[user?.access_level]?.name || 'Usuário'}
-            </p>
-          </div>
-          
-          {user?.referral_code && (
-            <div className="flex items-center gap-2">
-              <div className="px-4 py-2 bg-slate-100 rounded-lg">
-                <span className="text-sm text-slate-500">Seu código: </span>
-                <span className="font-mono font-bold text-primary-main">{user.referral_code}</span>
-              </div>
-              <Button variant="secondary" size="sm" onClick={copyReferralLink} data-testid="copy-link-btn">
-                <Copy className="w-4 h-4" />
-              </Button>
-            </div>
+    <AppLayout 
+      title={`Olá, ${user?.name?.split(' ')[0]}!`} 
+      subtitle={isAdmin ? 'Visão geral do sistema' : 'Acompanhe seu desempenho'}
+    >
+      <div className="space-y-6">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {isAdmin ? (
+            <>
+              <StatCard
+                icon={DollarSign}
+                label="Faturamento Mensal"
+                value={formatCurrency(dashboardData?.revenue?.total || 0)}
+                trend="+12% vs mês anterior"
+                trendUp={true}
+                color="blue"
+              />
+              <StatCard
+                icon={ShoppingBag}
+                label="Pedidos Este Mês"
+                value={dashboardData?.orders?.count || 0}
+                trend="+8% vs mês anterior"
+                trendUp={true}
+                color="green"
+              />
+              <StatCard
+                icon={Users}
+                label="Revendedores Ativos"
+                value={dashboardData?.users?.active || 0}
+                trend="+5 novos"
+                trendUp={true}
+                color="purple"
+              />
+              <StatCard
+                icon={Wallet}
+                label="Comissões Pendentes"
+                value={formatCurrency(dashboardData?.commissions?.pending || 0)}
+                color="amber"
+              />
+            </>
+          ) : (
+            <>
+              <StatCard
+                icon={Wallet}
+                label="Saldo Disponível"
+                value={formatCurrency(user?.available_balance || 0)}
+                color="green"
+              />
+              <StatCard
+                icon={Clock}
+                label="Saldo Bloqueado"
+                value={formatCurrency(user?.blocked_balance || 0)}
+                color="amber"
+              />
+              <StatCard
+                icon={TrendingUp}
+                label="Comissões do Mês"
+                value={formatCurrency(dashboardData?.commissions?.this_month || 0)}
+                trend="+18% vs mês anterior"
+                trendUp={true}
+                color="blue"
+              />
+              <StatCard
+                icon={Users}
+                label="Minha Rede"
+                value={dashboardData?.network?.total || 0}
+                trend="+3 novos"
+                trendUp={true}
+                color="purple"
+              />
+            </>
           )}
         </div>
 
-        {/* Balance Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card highlight className="fade-in">
-            <CardContent>
-              <p className="text-slate-300 mb-2">Saldo Disponível</p>
-              <p className="text-3xl font-heading font-bold text-white">
-                {formatCurrency(user?.available_balance || 0)}
-              </p>
-              <div className="mt-4">
-                <Button variant="gold" size="sm" className="w-full" data-testid="withdraw-btn">
-                  Solicitar Saque
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Main Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Sales Chart - Takes 2 columns */}
+          <DashCard 
+            title="Vendas x Comissões"
+            subtitle="Últimos 7 dias"
+            className="lg:col-span-2"
+            action={
+              <select className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white">
+                <option>Esta Semana</option>
+                <option>Este Mês</option>
+                <option>Este Ano</option>
+              </select>
+            }
+          >
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={salesData}>
+                  <defs>
+                    <linearGradient id="colorVendas" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#2563eb" stopOpacity={0.1}/>
+                      <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#fff', 
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '12px',
+                      boxShadow: '0 10px 40px rgba(0,0,0,0.1)'
+                    }}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="vendas" 
+                    stroke="#2563eb" 
+                    strokeWidth={2}
+                    fill="url(#colorVendas)" 
+                    name="Vendas"
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="comissoes" 
+                    stroke="#10b981" 
+                    strokeWidth={2}
+                    dot={{ r: 4, fill: '#10b981' }}
+                    name="Comissões"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </DashCard>
 
-          <Card className="fade-in stagger-1">
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-500">Saldo Bloqueado</p>
-                  <p className="text-2xl font-heading font-bold text-primary-main mt-1">
-                    {formatCurrency(user?.blocked_balance || 0)}
-                  </p>
-                  <p className="text-xs text-slate-400 mt-1">Liberado em 7 dias</p>
+          {/* Right Column - Calendar + Activities */}
+          <div className="space-y-6">
+            {/* Mini Calendar Card */}
+            <DashCard title="Calendário" noPadding>
+              <div className="p-4">
+                <div className="text-center mb-4">
+                  <h4 className="font-heading font-bold text-lg text-slate-900">
+                    {selectedDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+                  </h4>
                 </div>
-                <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
-                  <Clock className="w-6 h-6 text-amber-600" />
+                <div className="grid grid-cols-7 gap-1 text-center text-xs">
+                  {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((day, i) => (
+                    <div key={i} className="text-slate-400 font-medium py-2">{day}</div>
+                  ))}
+                  {Array.from({ length: 35 }, (_, i) => {
+                    const day = i - new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1).getDay() + 1;
+                    const isToday = day === new Date().getDate() && 
+                                    selectedDate.getMonth() === new Date().getMonth();
+                    const isValid = day > 0 && day <= new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0).getDate();
+                    
+                    return (
+                      <div 
+                        key={i}
+                        className={`py-2 rounded-lg text-sm cursor-pointer transition-colors
+                          ${!isValid ? 'text-transparent' : ''}
+                          ${isToday ? 'bg-brand-main text-white font-bold' : 'hover:bg-slate-100'}
+                        `}
+                      >
+                        {isValid ? day : ''}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </DashCard>
 
-          <Card className="fade-in stagger-2">
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-500">Comissões do Mês</p>
-                  <p className="text-2xl font-heading font-bold text-primary-main mt-1">
-                    {formatCurrency(dashboardData?.commissions?.this_month || 0)}
-                  </p>
-                </div>
-                <div className="w-12 h-12 gold-gradient rounded-xl flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-white" />
-                </div>
+            {/* Recent Activity */}
+            <DashCard title="Atividade Recente" noPadding>
+              <div className="divide-y divide-slate-100">
+                {recentActivities.map((activity, idx) => {
+                  const colors = {
+                    blue: 'bg-blue-50 text-blue-600',
+                    green: 'bg-emerald-50 text-emerald-600',
+                    amber: 'bg-amber-50 text-amber-600',
+                    purple: 'bg-purple-50 text-purple-600',
+                  };
+                  
+                  return (
+                    <div key={idx} className="flex items-center gap-3 p-4 hover:bg-slate-50 transition-colors">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${colors[activity.color]}`}>
+                        <activity.icon className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-slate-700 truncate">{activity.text}</p>
+                        <p className="text-xs text-slate-400">{activity.time}</p>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            </CardContent>
-          </Card>
+            </DashCard>
+          </div>
         </div>
 
-        {/* Network Stats */}
-        {(accessLevel === 3 || accessLevel === 4) && dashboardData?.network && (
-          <Card className="fade-in stagger-3">
-            <CardHeader>
-              <CardTitle>Minha Rede</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center p-4 bg-slate-50 rounded-lg">
-                  <p className="text-3xl font-heading font-bold text-primary-main">
-                    {dashboardData.network.total_network || 0}
-                  </p>
-                  <p className="text-sm text-slate-500">Total</p>
+        {/* Bottom Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Network Distribution */}
+          <DashCard title="Distribuição da Rede">
+            <div className="h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                <RechartsPie>
+                  <Pie
+                    data={networkData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={80}
+                    paddingAngle={2}
+                    dataKey="value"
+                  >
+                    {networkData.map((entry, index) => (
+                      <Cell key={index} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </RechartsPie>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex flex-wrap justify-center gap-3 mt-2">
+              {networkData.map((item, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                  <span className="text-xs text-slate-600">{item.name}</span>
                 </div>
-                <div className="text-center p-4 bg-emerald-50 rounded-lg">
-                  <p className="text-3xl font-heading font-bold text-emerald-600">
-                    {dashboardData.network.level_1 || 0}
-                  </p>
-                  <p className="text-sm text-slate-500">1º Nível</p>
-                </div>
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <p className="text-3xl font-heading font-bold text-blue-600">
-                    {dashboardData.network.level_2 || 0}
-                  </p>
-                  <p className="text-sm text-slate-500">2º Nível</p>
-                </div>
-                <div className="text-center p-4 bg-purple-50 rounded-lg">
-                  <p className="text-3xl font-heading font-bold text-purple-600">
-                    {dashboardData.network.level_3 || 0}
-                  </p>
-                  <p className="text-sm text-slate-500">3º Nível</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+              ))}
+            </div>
+          </DashCard>
 
-        {/* Qualification Status */}
-        {dashboardData?.qualification && (
-          <Card className={dashboardData.qualification.is_qualified ? 'border-emerald-200' : 'border-amber-200'}>
-            <CardContent>
-              <div className="flex items-center gap-4">
-                {dashboardData.qualification.is_qualified ? (
-                  <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
-                    <CheckCircle className="w-6 h-6 text-emerald-600" />
+          {/* Goals Progress */}
+          <DashCard 
+            title="Progresso das Metas"
+            action={<a href="/goals" className="text-sm text-brand-main hover:underline">Ver todas</a>}
+          >
+            <div className="space-y-4">
+              <ProgressCard title="Meta de Vendas" current={7500} target={10000} color="blue" />
+              <ProgressCard title="Novos Clientes" current={12} target={20} color="green" />
+              <ProgressCard title="Volume Pessoal" current={850} target={1000} color="amber" />
+            </div>
+          </DashCard>
+
+          {/* Referral Link Card */}
+          {!isAdmin && (
+            <DashCard title="Seu Link de Indicação" className="bg-gradient-to-br from-brand-main to-blue-700">
+              <div className="text-center">
+                <div className="w-16 h-16 mx-auto bg-white/20 rounded-2xl flex items-center justify-center mb-4">
+                  <Zap className="w-8 h-8 text-white" />
+                </div>
+                <p className="text-blue-100 text-sm mb-2">Compartilhe e ganhe comissões</p>
+                <div className="bg-white/10 rounded-xl p-3 mb-4">
+                  <code className="text-white text-sm font-mono">{user?.referral_code}</code>
+                </div>
+                <button
+                  onClick={copyReferralLink}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white text-brand-main rounded-xl font-medium hover:bg-blue-50 transition-colors"
+                  data-testid="copy-referral-btn"
+                >
+                  <Copy className="w-4 h-4" />
+                  Copiar Link
+                </button>
+              </div>
+            </DashCard>
+          )}
+
+          {/* Top Performers (Admin) */}
+          {isAdmin && (
+            <DashCard 
+              title="Top Revendedores"
+              action={<a href="/ranking" className="text-sm text-brand-main hover:underline">Ver ranking</a>}
+              noPadding
+            >
+              <div className="divide-y divide-slate-100">
+                {(dashboardData?.top_resellers || []).slice(0, 5).map((reseller, idx) => (
+                  <div key={idx} className="flex items-center gap-3 p-4">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold
+                      ${idx === 0 ? 'bg-yellow-100 text-yellow-700' : 
+                        idx === 1 ? 'bg-slate-100 text-slate-600' : 
+                        idx === 2 ? 'bg-amber-100 text-amber-700' : 'bg-slate-50 text-slate-500'}
+                    `}>
+                      {idx + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-slate-700 truncate">{reseller.name}</p>
+                    </div>
+                    <span className="text-sm font-bold text-slate-900">
+                      {formatCurrency(reseller.total_sales || 0)}
+                    </span>
                   </div>
-                ) : (
-                  <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
-                    <AlertCircle className="w-6 h-6 text-amber-600" />
+                ))}
+                {(!dashboardData?.top_resellers || dashboardData.top_resellers.length === 0) && (
+                  <div className="p-8 text-center text-slate-400 text-sm">
+                    Nenhum dado disponível
                   </div>
                 )}
-                <div className="flex-1">
-                  <p className="font-heading font-bold text-primary-main">
-                    {dashboardData.qualification.is_qualified ? 'Qualificado!' : 'Falta qualificar'}
-                  </p>
-                  <p className="text-sm text-slate-600">
-                    Volume pessoal: {formatCurrency(dashboardData.qualification.current_volume)} / {formatCurrency(dashboardData.qualification.min_required)}
-                  </p>
-                </div>
-                <Badge variant={dashboardData.qualification.is_qualified ? 'success' : 'warning'}>
-                  {dashboardData.qualification.is_qualified ? 'Ativo' : 'Pendente'}
-                </Badge>
               </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Share Link */}
-        {user?.referral_code && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Compartilhe seu Link</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
-                <input
-                  type="text"
-                  readOnly
-                  value={`${window.location.origin}/store?ref=${user.referral_code}`}
-                  className="flex-1 bg-transparent border-none outline-none text-sm text-slate-600"
-                />
-                <Button variant="secondary" size="sm" onClick={copyReferralLink}>
-                  <Copy className="w-4 h-4" />
-                  Copiar
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+            </DashCard>
+          )}
+        </div>
       </div>
-    </DashboardLayout>
+    </AppLayout>
   );
 }
