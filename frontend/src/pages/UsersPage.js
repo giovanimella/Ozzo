@@ -102,7 +102,8 @@ export default function UsersPage() {
       cpf: '',
       available_balance: 0,
       blocked_balance: 0,
-      points: 0
+      points: 0,
+      supervisor_id: ''
     });
     setShowModal(true);
   };
@@ -119,7 +120,8 @@ export default function UsersPage() {
       cpf: user.cpf || '',
       available_balance: user.available_balance || 0,
       blocked_balance: user.blocked_balance || 0,
-      points: user.points || 0
+      points: user.points || 0,
+      supervisor_id: user.supervisor_id || ''
     });
     setShowModal(true);
   };
