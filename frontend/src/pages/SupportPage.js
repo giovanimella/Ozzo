@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import DashboardLayout from '../components/layouts/DashboardLayout';
+import AppLayout from '../components/layout/AppLayout';
 import { Ticket, Plus, Filter, MessageSquare, CheckCircle, XCircle, Clock, AlertCircle } from 'lucide-react';
 
 export default function SupportPage() {
