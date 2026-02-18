@@ -4,7 +4,8 @@ import { useAuth, ACCESS_LEVELS } from '../../contexts/AuthContext';
 import { 
   LayoutDashboard, Users, ShoppingBag, Wallet, Settings, 
   Network, LogOut, Menu, X, ChevronDown, Package,
-  FileText, Bell, UserCircle, BarChart3, ClipboardList
+  FileText, Bell, UserCircle, BarChart3, ClipboardList,
+  Trophy, Target, Link2
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -19,6 +20,8 @@ const getMenuItems = (accessLevel) => {
     items.push({ icon: Users, label: 'Usuários', path: '/users' });
     items.push({ icon: ClipboardList, label: 'Pedidos', path: '/orders' });
     items.push({ icon: BarChart3, label: 'Relatórios', path: '/reports' });
+    items.push({ icon: Trophy, label: 'Ranking', path: '/ranking' });
+    items.push({ icon: Target, label: 'Metas', path: '/goals' });
     items.push({ icon: Wallet, label: 'Saques', path: '/withdrawals' });
     items.push({ icon: FileText, label: 'Logs', path: '/logs' });
   }
@@ -31,11 +34,15 @@ const getMenuItems = (accessLevel) => {
   // Supervisor (2)
   if (accessLevel === 2) {
     items.push({ icon: Users, label: 'Minha Carteira', path: '/my-portfolio' });
+    items.push({ icon: Trophy, label: 'Ranking', path: '/ranking' });
   }
 
   // Líder (3) e Revendedor (4)
   if (accessLevel === 3 || accessLevel === 4) {
     items.push({ icon: Network, label: 'Minha Rede', path: '/network' });
+    items.push({ icon: Trophy, label: 'Ranking', path: '/ranking' });
+    items.push({ icon: Target, label: 'Metas', path: '/goals' });
+    items.push({ icon: Link2, label: 'Link de Indicação', path: '/referral-links' });
     items.push({ icon: ShoppingBag, label: 'Meus Pedidos', path: '/my-orders' });
     items.push({ icon: Wallet, label: 'Minha Carteira', path: '/wallet' });
   }
@@ -43,12 +50,16 @@ const getMenuItems = (accessLevel) => {
   // Cliente (5)
   if (accessLevel === 5) {
     items.push({ icon: ShoppingBag, label: 'Meus Pedidos', path: '/my-orders' });
+    items.push({ icon: Link2, label: 'Meu Link', path: '/referral-links' });
+    items.push({ icon: Target, label: 'Metas', path: '/goals' });
     items.push({ icon: Wallet, label: 'Minhas Comissões', path: '/wallet' });
   }
 
   // Embaixador (6)
   if (accessLevel === 6) {
     items.push({ icon: ShoppingBag, label: 'Meus Pedidos', path: '/my-orders' });
+    items.push({ icon: Link2, label: 'Meu Link', path: '/referral-links' });
+    items.push({ icon: Target, label: 'Metas', path: '/goals' });
     items.push({ icon: Wallet, label: 'Minhas Comissões', path: '/wallet' });
   }
 
