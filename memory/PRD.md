@@ -4,10 +4,19 @@
 Sistema de Marketing Multinível com 7 níveis de acesso hierárquicos, comissões até 3ª geração (10%, 5%, 5%), loja online integrada, carteira financeira interna, sistema de qualificação mensal, e gestão completa de rede multinível.
 
 ## Architecture
-- **Frontend**: React 18 + Tailwind CSS + Lucide Icons
+- **Frontend**: React 18 + Tailwind CSS + Lucide Icons + Recharts
 - **Backend**: FastAPI (Python) 
 - **Database**: MongoDB
 - **Authentication**: JWT + Google OAuth (Emergent Auth)
+
+## Design System (Feb 18, 2026)
+- **Sidebar**: Fundo escuro (#0f172a), fixo à esquerda, 18rem largura
+- **Perfil**: Foto/Avatar, nome, cargo, estatísticas rápidas (Pontos, Rede, Saldo)
+- **Menu**: Seções agrupadas (Principal, Análises, Financeiro, Loja, Sistema)
+- **Cards**: Brancos com bordas suaves, sombras leves, ícones coloridos
+- **Cores**: Brand (#2563eb), Success (#10b981), Amber (#f59e0b), Purple (#8b5cf6)
+- **Gráficos**: Recharts com Area, Bar, Pie, Line
+- **Fontes**: Manrope (headings), Inter (body)
 
 ## User Personas
 
