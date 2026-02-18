@@ -705,6 +705,82 @@ async def invite_user(request: Request, data: InviteRequest, user: dict = Depend
     
     return {"message": "Invite sent", "invite_id": invite["invite_id"]}
 
+class ResellerInviteRequest(BaseModel):
+    email: EmailStr
+    name: str
+    type: str = "reseller"
+
+@app.post("/api/invites/send")
+async def send_reseller_invite(request: Request, data: ResellerInviteRequest, user: dict = Depends(get_current_user)):
+    """Send invite to become a reseller in user's network"""
+    db = request.app.db
+    
+    # Only resellers (4) and leaders (3) can invite new resellers
+    if user.get("access_level") not in [3, 4]:
+        raise HTTPException(status_code=403, detail="Only resellers and leaders can invite new resellers")
+    
+    # Check if user already exists
+    existing = await db.users.find_one({"email": data.email})
+    if existing:
+        raise HTTPException(status_code=400, detail="Este email já está cadastrado no sistema")
+    
+    # Check for existing pending invite
+    existing_invite = await db.invites.find_one({
+        "email": data.email,
+        "status": "pending"
+    })
+    if existing_invite:
+        raise HTTPException(status_code=400, detail="Já existe um convite pendente para este email")
+    
+    invite = {
+        "invite_id": generate_id("inv_"),
+        "email": data.email,
+        "name": data.name,
+        "target_level": 4,  # Reseller
+        "invited_by": user["user_id"],
+        "sponsor_code": user.get("referral_code"),
+        "type": data.type,
+        "status": "pending",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "expires_at": (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
+    }
+    
+    await db.invites.insert_one(invite)
+    
+    # Log the invite
+    await db.logs.insert_one({
+        "log_id": generate_id("log_"),
+        "action": "reseller_invite_sent",
+        "user_id": user["user_id"],
+        "details": {"email": data.email, "name": data.name},
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    # Send push notification to inviter confirming the invite was sent
+    await send_push_notification(
+        db,
+        user["user_id"],
+        "Convite Enviado! 📩",
+        f"Convite enviado para {data.name}. Aguarde a confirmação!",
+        {"url": "/network", "type": "invite_sent"}
+    )
+    
+    # TODO: Send email via Resend when configured
+    
+    return {"message": "Convite enviado com sucesso", "invite_id": invite["invite_id"]}
+
+@app.get("/api/invites/sent")
+async def get_sent_invites(request: Request, user: dict = Depends(get_current_user)):
+    """Get list of invites sent by the user"""
+    db = request.app.db
+    
+    invites = await db.invites.find(
+        {"invited_by": user["user_id"]},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    
+    return {"invites": invites}
+
 @app.post("/api/users/ambassador-commission")
 async def set_ambassador_commission(request: Request, data: AmbassadorCommission, user: dict = Depends(require_access_level(1))):
     db = request.app.db
