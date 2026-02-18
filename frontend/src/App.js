@@ -80,9 +80,14 @@ function AppRouter() {
           <WalletPage />
         </ProtectedRoute>
       } />
+      <Route path="/checkout" element={
+        <ProtectedRoute>
+          <CheckoutPage />
+        </ProtectedRoute>
+      } />
       <Route path="/my-orders" element={
         <ProtectedRoute>
-          <DashboardPage />
+          <OrdersPage />
         </ProtectedRoute>
       } />
 
@@ -113,17 +118,22 @@ function AppRouter() {
       } />
       <Route path="/reports" element={
         <ProtectedRoute minAccessLevel={1}>
-          <DashboardPage />
+          <ReportsPage />
         </ProtectedRoute>
       } />
       <Route path="/withdrawals" element={
         <ProtectedRoute minAccessLevel={1}>
-          <WalletPage />
+          <WithdrawalsAdminPage />
         </ProtectedRoute>
       } />
       <Route path="/logs" element={
         <ProtectedRoute minAccessLevel={1}>
-          <DashboardPage />
+          <LogsPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/orders" element={
+        <ProtectedRoute minAccessLevel={1}>
+          <OrdersPage />
         </ProtectedRoute>
       } />
 
