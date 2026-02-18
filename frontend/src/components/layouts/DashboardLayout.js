@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Users, ShoppingBag, Wallet, Settings, 
   Network, LogOut, Menu, X, ChevronDown, Package,
   FileText, Bell, UserCircle, BarChart3, ClipboardList,
-  Trophy, Target, Link2
+  Trophy, Target, Link2, MessageCircle, Headphones
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
