@@ -25,6 +25,7 @@ import RankingPage from './pages/RankingPage';
 import GoalsPage from './pages/GoalsPage';
 import ReferralLinksPage from './pages/ReferralLinksPage';
 import CommissionsPage from './pages/CommissionsPage';
+import InvitePage from './pages/InvitePage';
 
 // Protected Route Component
 function ProtectedRoute({ children, minAccessLevel = 99 }) {
