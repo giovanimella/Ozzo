@@ -569,7 +569,7 @@ async def set_ambassador_commission(request: Request, data: AmbassadorCommission
 
 # ==================== USER MANAGEMENT (ADMIN) ====================
 
-class UserUpdate(BaseModel):
+class UserUpdateAdmin(BaseModel):
     name: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
@@ -580,16 +580,25 @@ class UserUpdate(BaseModel):
     available_balance: Optional[float] = None
     blocked_balance: Optional[float] = None
     points: Optional[int] = None
+    address: Optional[dict] = None
+    bank_info: Optional[dict] = None
 
 @app.put("/api/users/{user_id}")
 async def update_user(
     request: Request, 
     user_id: str, 
-    data: UserUpdate, 
-    current_user: dict = Depends(require_access_level(1))
+    data: UserUpdateAdmin, 
+    current_user: dict = Depends(get_current_user)
 ):
-    """Update user details (Admin only)"""
+    """Update user details - Admin can update any user, users can update their own profile"""
     db = request.app.db
+    
+    # Check permissions: admin (level <= 1) can update anyone, others only themselves
+    is_admin = current_user.get("access_level", 99) <= 1
+    is_self = current_user["user_id"] == user_id
+    
+    if not is_admin and not is_self:
+        raise HTTPException(status_code=403, detail="Access denied")
     
     # Find the user to update
     target_user = await db.users.find_one({"user_id": user_id})
@@ -599,30 +608,38 @@ async def update_user(
     # Build update dict with only provided fields
     update_data = {}
     
+    # Fields that regular users can update (profile fields)
     if data.name is not None:
         update_data["name"] = data.name
-    if data.email is not None:
-        # Check if email is already in use by another user
-        existing = await db.users.find_one({"email": data.email, "user_id": {"$ne": user_id}})
-        if existing:
-            raise HTTPException(status_code=400, detail="Email já está em uso")
-        update_data["email"] = data.email
     if data.phone is not None:
         update_data["phone"] = data.phone
-    if data.password:
-        update_data["password"] = pwd_context.hash(data.password)
-    if data.access_level is not None:
-        update_data["access_level"] = data.access_level
-    if data.status is not None:
-        update_data["status"] = data.status
     if data.cpf is not None:
         update_data["cpf"] = data.cpf
-    if data.available_balance is not None:
-        update_data["available_balance"] = data.available_balance
-    if data.blocked_balance is not None:
-        update_data["blocked_balance"] = data.blocked_balance
-    if data.points is not None:
-        update_data["points"] = data.points
+    if data.address is not None:
+        update_data["address"] = data.address
+    if data.bank_info is not None:
+        update_data["bank_info"] = data.bank_info
+    
+    # Admin-only fields
+    if is_admin:
+        if data.email is not None:
+            # Check if email is already in use by another user
+            existing = await db.users.find_one({"email": data.email, "user_id": {"$ne": user_id}})
+            if existing:
+                raise HTTPException(status_code=400, detail="Email já está em uso")
+            update_data["email"] = data.email
+        if data.password:
+            update_data["password"] = pwd_context.hash(data.password)
+        if data.access_level is not None:
+            update_data["access_level"] = data.access_level
+        if data.status is not None:
+            update_data["status"] = data.status
+        if data.available_balance is not None:
+            update_data["available_balance"] = data.available_balance
+        if data.blocked_balance is not None:
+            update_data["blocked_balance"] = data.blocked_balance
+        if data.points is not None:
+            update_data["points"] = data.points
     
     if not update_data:
         raise HTTPException(status_code=400, detail="Nenhum campo para atualizar")
