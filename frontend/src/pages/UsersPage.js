@@ -511,6 +511,33 @@ export default function UsersPage() {
                 />
               </div>
 
+              {/* Supervisor - Only for Resellers/Leaders */}
+              {(formData.access_level === 3 || formData.access_level === 4) && (
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      <UserCog className="w-4 h-4 inline-block mr-1" />
+                      Supervisor Responsável
+                    </label>
+                    <select
+                      value={formData.supervisor_id}
+                      onChange={(e) => setFormData({ ...formData, supervisor_id: e.target.value })}
+                      className="w-full h-10 px-3 border border-slate-200 rounded-lg bg-white focus:ring-2 focus:ring-brand-main"
+                    >
+                      <option value="">Nenhum supervisor atribuído</option>
+                      {supervisors.map((sup) => (
+                        <option key={sup.user_id} value={sup.user_id}>
+                          {sup.name} ({sup.email})
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-slate-500 mt-1">
+                      O supervisor terá acesso aos dados deste revendedor/líder
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {editingUser && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
                   <Input
