@@ -2724,18 +2724,21 @@ async def get_scheduler_status(request: Request, user: dict = Depends(require_ac
     
     # Get last run times from logs
     last_qualification = await db.logs.find_one(
-        {"action": "qualifications_checked"},
-        {"_id": 0}
+        {"action": {"$in": ["qualifications_checked", "scheduled_qualifications_checked"]}},
+        {"_id": 0},
+        sort=[("created_at", -1)]
     )
     
     last_commission_release = await db.logs.find_one(
-        {"action": "commissions_released"},
-        {"_id": 0}
+        {"action": {"$in": ["commissions_released", "scheduled_commissions_released"]}},
+        {"_id": 0},
+        sort=[("created_at", -1)]
     )
     
     last_goals_process = await db.logs.find_one(
         {"action": "goals_processed"},
-        {"_id": 0}
+        {"_id": 0},
+        sort=[("created_at", -1)]
     )
     
     # Pending items
@@ -2743,7 +2746,18 @@ async def get_scheduler_status(request: Request, user: dict = Depends(require_ac
     pending_withdrawals = await db.withdrawals.count_documents({"status": "pending"})
     active_goals = await db.goals.count_documents({"active": True, "processed": {"$ne": True}})
     
+    # Scheduler jobs info
+    jobs_info = []
+    for job in scheduler.get_jobs():
+        jobs_info.append({
+            "id": job.id,
+            "next_run": job.next_run_time.isoformat() if job.next_run_time else None,
+            "trigger": str(job.trigger)
+        })
+    
     return {
+        "scheduler_running": scheduler.running,
+        "jobs": jobs_info,
         "last_runs": {
             "qualification_check": last_qualification.get("created_at") if last_qualification else None,
             "commission_release": last_commission_release.get("created_at") if last_commission_release else None,
@@ -2755,6 +2769,20 @@ async def get_scheduler_status(request: Request, user: dict = Depends(require_ac
             "goals_to_process": active_goals
         }
     }
+
+@app.post("/api/admin/run-job/{job_id}")
+async def run_job_manually(request: Request, job_id: str, user: dict = Depends(require_access_level(0))):
+    """Manually trigger a scheduled job"""
+    db = request.app.db
+    
+    if job_id == "release_commissions":
+        await release_commissions_job(db)
+        return {"message": "Commission release job executed"}
+    elif job_id == "check_qualifications":
+        await check_qualifications_job(db)
+        return {"message": "Qualification check job executed"}
+    else:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
 
 # ==================== HEALTH CHECK ====================
 
