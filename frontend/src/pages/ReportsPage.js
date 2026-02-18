@@ -1,22 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import DashboardLayout from '../components/layouts/DashboardLayout';
-import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
+import AppLayout, { StatCard, DashCard } from '../components/layout/AppLayout';
 import { formatCurrency } from '../lib/utils';
 import { toast } from '../components/ui/toast';
 import { 
   BarChart3, TrendingUp, Users, ShoppingBag, Wallet,
-  Calendar, Download, ArrowUpRight, ArrowDownRight
+  Download, ArrowUpRight
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line, PieChart, Pie, Cell, Legend
+  LineChart, Line, PieChart, Pie, Cell, AreaChart, Area
 } from 'recharts';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || '';
 
-const COLORS = ['#0f172a', '#3b82f6', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899'];
+const COLORS = ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
 export default function ReportsPage() {
   const { token } = useAuth();
