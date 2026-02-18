@@ -26,6 +26,8 @@ import GoalsPage from './pages/GoalsPage';
 import ReferralLinksPage from './pages/ReferralLinksPage';
 import CommissionsPage from './pages/CommissionsPage';
 import InvitePage from './pages/InvitePage';
+import WithdrawalsReportPage from './pages/WithdrawalsReportPage';
+import SupervisedUsersPage from './pages/SupervisedUsersPage';
 
 // Protected Route Component
 function ProtectedRoute({ children, minAccessLevel = 99 }) {
