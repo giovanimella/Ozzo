@@ -123,6 +123,14 @@ Sistema de Marketing Multinível com 7 níveis de acesso hierárquicos, comissõ
 - [x] **Página de Metas (/goals)** - CRUD de metas, progresso visual, conquistas
 - [x] **Página de Links de Indicação (/referral-links)** - Link, código, estatísticas, dicas
 - [x] **Página de Comissões (/commissions)** - Cards, filtros, histórico por nível
+- [x] **Página de Convite (/invite)** - Convidar revendedores com link, código, WhatsApp, Telegram, Email
+- [x] **Página de Relatório de Saques (/withdrawals-report)** - Relatório para financeiro com dados bancários
+- [x] **Página de Minha Carteira (/my-portfolio)** - Supervisor vê usuários supervisionados
+- [x] **PWA (Progressive Web App)** - Manifest, Service Worker, ícones, instalável no celular
+- [x] **Design Mobile App-Like** - Bottom Navigation, header com gradiente, cards mobile-first
+- [x] **Sistema de Notificações In-App** - Dropdown com notificações, marcar como lido
+- [x] **Push Notifications** - Service Worker com push handler, API de subscrição
+- [x] **Campo Supervisor** - Atribuir supervisor a revendedores/líderes
 
 ### Integrações (ESTRUTURA PRONTA - Requer Chaves de API)
 - [x] PagSeguro (estrutura pronta, credenciais via settings)
