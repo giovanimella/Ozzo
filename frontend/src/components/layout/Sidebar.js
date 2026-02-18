@@ -53,6 +53,7 @@ const getMenuItems = (accessLevel) => {
     items.push({ icon: Target, label: 'Metas', path: '/goals' });
     items.push({ icon: Link2, label: 'Link de Indicação', path: '/referral-links' });
     items.push({ section: 'Financeiro' });
+    items.push({ icon: DollarSign, label: 'Comissões', path: '/commissions' });
     items.push({ icon: ShoppingBag, label: 'Meus Pedidos', path: '/my-orders' });
     items.push({ icon: Wallet, label: 'Minha Carteira', path: '/wallet' });
   }
