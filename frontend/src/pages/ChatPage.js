@@ -187,37 +187,31 @@ export default function ChatPage() {
   );
 
   return (
-    <DashboardLayout>
-      <div className="flex flex-col h-[calc(100vh-8rem)]">
-        {/* Header */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900" data-testid="chat-title">Chat</h1>
-              <p className="text-gray-600 mt-1">Converse em tempo real com sua equipe</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg border border-gray-200">
-                <div className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`} />
-                <span className="text-sm text-gray-700">
-                  {connected ? 'Conectado' : 'Desconectado'}
-                </span>
-              </div>
-              {!selectedConversation && !showNewChat && (
-                <button
-                  onClick={() => setShowNewChat(true)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  data-testid="new-chat-btn"
-                >
-                  Nova Conversa
-                </button>
-              )}
+    <AppLayout title="Chat" subtitle="Converse em tempo real com sua equipe">
+      <div className="space-y-6">
+        {/* Status Bar */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg border border-gray-200">
+              <div className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`} />
+              <span className="text-sm text-gray-700">
+                {connected ? 'Conectado' : 'Desconectado'}
+              </span>
             </div>
           </div>
+          {!selectedConversation && !showNewChat && (
+            <button
+              onClick={() => setShowNewChat(true)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              data-testid="new-chat-btn"
+            >
+              Nova Conversa
+            </button>
+          )}
         </div>
 
         {/* Chat Container */}
-        <div className="flex-1 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex" style={{ height: 'calc(100vh - 280px)' }}>
           {/* Conversations Sidebar */}
           <div className="w-80 border-r border-gray-200 flex flex-col">
             <div className="p-4 border-b border-gray-200 bg-gray-50">
