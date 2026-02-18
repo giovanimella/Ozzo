@@ -823,6 +823,7 @@ class UserUpdateAdmin(BaseModel):
     points: Optional[int] = None
     address: Optional[dict] = None
     bank_info: Optional[dict] = None
+    supervisor_id: Optional[str] = None
 
 @app.put("/api/users/{user_id}")
 async def update_user(
