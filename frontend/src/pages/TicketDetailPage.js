@@ -248,6 +248,6 @@ export default function TicketDetailPage() {
           </div>
         )}
       </div>
-    </DashboardLayout>
+    </AppLayout>
   );
 }
