@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useAuth, ACCESS_LEVELS } from '../contexts/AuthContext';
 import AppLayout, { StatCard, DashCard } from '../components/layout/AppLayout';
 import { Input } from '../components/ui/Input';
+import { Button } from '../components/ui/Button';
 import { formatDate, formatCurrency } from '../lib/utils';
 import { toast } from '../components/ui/toast';
 import { 
   Search, UserPlus, Edit2, Trash2, X, Users,
   ChevronLeft, ChevronRight, Mail, Phone, Eye, 
-  CheckCircle, XCircle, Shield, Save
+  CheckCircle, XCircle, Shield, Save, UserCog
 } from 'lucide-react';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -15,6 +16,7 @@ const API_URL = process.env.REACT_APP_BACKEND_URL;
 export default function UsersPage() {
   const { token } = useAuth();
   const [users, setUsers] = useState([]);
+  const [supervisors, setSupervisors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState({ access_level: '', status: '' });
@@ -33,7 +35,8 @@ export default function UsersPage() {
     cpf: '',
     available_balance: 0,
     blocked_balance: 0,
-    points: 0
+    points: 0,
+    supervisor_id: ''
   });
 
   useEffect(() => {
