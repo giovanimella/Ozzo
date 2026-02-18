@@ -471,29 +471,7 @@ async def get_user(request: Request, user_id: str, user: dict = Depends(require_
         raise HTTPException(status_code=404, detail="User not found")
     return target_user
 
-@app.put("/api/users/{user_id}")
-async def update_user(request: Request, user_id: str, data: UserUpdate, user: dict = Depends(get_current_user)):
-    db = request.app.db
-    
-    # Users can only update their own profile, unless admin
-    if user["user_id"] != user_id and user.get("access_level") > 1:
-        raise HTTPException(status_code=403, detail="Access denied")
-    
-    update_data = {k: v for k, v in data.model_dump().items() if v is not None}
-    if update_data:
-        await db.users.update_one({"user_id": user_id}, {"$set": update_data})
-        
-        await db.logs.insert_one({
-            "log_id": generate_id("log_"),
-            "action": "user_updated",
-            "user_id": user_id,
-            "by_user_id": user["user_id"],
-            "details": update_data,
-            "created_at": datetime.now(timezone.utc).isoformat()
-        })
-    
-    updated = await db.users.find_one({"user_id": user_id}, {"_id": 0, "password": 0})
-    return updated
+# Note: User update route moved to admin section with extended fields
 
 @app.post("/api/users/convert")
 async def convert_user(request: Request, data: ConvertUserRequest, user: dict = Depends(require_access_level(1))):
