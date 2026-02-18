@@ -111,6 +111,21 @@ function AppRouter() {
           <InvitePage />
         </ProtectedRoute>
       } />
+      <Route path="/support" element={
+        <ProtectedRoute>
+          <SupportPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/support/:ticket_id" element={
+        <ProtectedRoute>
+          <TicketDetailPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/chat" element={
+        <ProtectedRoute>
+          <ChatPage />
+        </ProtectedRoute>
+      } />
 
       {/* Reseller/Leader Routes */}
       <Route path="/network" element={
