@@ -158,11 +158,10 @@ export default function CommissionsPage() {
           {statsCards.map((stat, index) => (
             <StatCard
               key={index}
-              title={stat.title}
+              label={stat.title}
               value={stat.value}
               icon={stat.icon}
               color={stat.color}
-              subtitle={stat.subtitle}
             />
           ))}
         </div>
