@@ -2795,6 +2795,129 @@ async def health_check(request: Request):
     except Exception as e:
         return {"status": "unhealthy", "database": str(e)}
 
+# ==================== PUSH NOTIFICATIONS ====================
+
+# VAPID keys for push notifications (generate your own for production)
+VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY", "your-private-key")
+VAPID_PUBLIC_KEY = os.environ.get("VAPID_PUBLIC_KEY", "BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U")
+VAPID_CLAIMS = {"sub": "mailto:admin@vanguard.com"}
+
+class PushSubscription(BaseModel):
+    subscription: dict
+
+class PushUnsubscribe(BaseModel):
+    endpoint: str
+
+@app.post("/api/notifications/subscribe")
+async def subscribe_to_notifications(request: Request, data: PushSubscription, user: dict = Depends(get_current_user)):
+    """Subscribe a user to push notifications"""
+    db = request.app.db
+    
+    subscription_data = {
+        "user_id": user["user_id"],
+        "endpoint": data.subscription.get("endpoint"),
+        "keys": data.subscription.get("keys"),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    # Update or insert subscription
+    await db.push_subscriptions.update_one(
+        {"user_id": user["user_id"], "endpoint": subscription_data["endpoint"]},
+        {"$set": subscription_data},
+        upsert=True
+    )
+    
+    # Log the subscription
+    await db.logs.insert_one({
+        "log_id": generate_id("log_"),
+        "action": "push_subscribed",
+        "user_id": user["user_id"],
+        "details": {"endpoint": subscription_data["endpoint"][:50] + "..."},
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    return {"message": "Subscribed to notifications"}
+
+@app.post("/api/notifications/unsubscribe")
+async def unsubscribe_from_notifications(request: Request, data: PushUnsubscribe, user: dict = Depends(get_current_user)):
+    """Unsubscribe a user from push notifications"""
+    db = request.app.db
+    
+    await db.push_subscriptions.delete_one({
+        "user_id": user["user_id"],
+        "endpoint": data.endpoint
+    })
+    
+    return {"message": "Unsubscribed from notifications"}
+
+@app.get("/api/notifications/status")
+async def get_notification_status(request: Request, user: dict = Depends(get_current_user)):
+    """Check if user is subscribed to push notifications"""
+    db = request.app.db
+    
+    subscription = await db.push_subscriptions.find_one(
+        {"user_id": user["user_id"]},
+        {"_id": 0, "endpoint": 1}
+    )
+    
+    return {
+        "subscribed": subscription is not None,
+        "vapid_public_key": VAPID_PUBLIC_KEY
+    }
+
+async def send_push_notification(db, user_id: str, title: str, body: str, data: dict = None):
+    """Send push notification to a user"""
+    subscriptions = await db.push_subscriptions.find({"user_id": user_id}, {"_id": 0}).to_list(10)
+    
+    if not subscriptions:
+        logger.info(f"No push subscriptions for user {user_id}")
+        return
+    
+    payload = {
+        "title": title,
+        "body": body,
+        "icon": "/icon-192x192.png",
+        "badge": "/icon-72x72.png",
+        "tag": f"vanguard-{datetime.now().timestamp()}",
+        "data": data or {}
+    }
+    
+    for sub in subscriptions:
+        try:
+            subscription_info = {
+                "endpoint": sub["endpoint"],
+                "keys": sub["keys"]
+            }
+            
+            webpush(
+                subscription_info=subscription_info,
+                data=str(payload).replace("'", '"'),
+                vapid_private_key=VAPID_PRIVATE_KEY,
+                vapid_claims=VAPID_CLAIMS
+            )
+            logger.info(f"Push notification sent to user {user_id}")
+        except WebPushException as e:
+            logger.error(f"Push notification failed: {e}")
+            # Remove invalid subscription
+            if e.response and e.response.status_code in [404, 410]:
+                await db.push_subscriptions.delete_one({"endpoint": sub["endpoint"]})
+        except Exception as e:
+            logger.error(f"Push notification error: {e}")
+
+@app.post("/api/admin/send-notification")
+async def send_admin_notification(request: Request, user: dict = Depends(require_access_level(0))):
+    """Send a test notification (admin only)"""
+    db = request.app.db
+    body = await request.json()
+    
+    target_user_id = body.get("user_id", user["user_id"])
+    title = body.get("title", "Teste de Notificação")
+    message = body.get("body", "Esta é uma notificação de teste do Vanguard MLM!")
+    
+    await send_push_notification(db, target_user_id, title, message)
+    
+    return {"message": f"Notification sent to user {target_user_id}"}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8001)
