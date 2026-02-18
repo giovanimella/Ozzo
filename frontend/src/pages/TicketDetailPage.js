@@ -116,7 +116,8 @@ export default function TicketDetailPage() {
     <AppLayout title={`Ticket #${ticket_id.slice(-8)}`} subtitle={ticket.subject} showBack={true}>
       <div className="max-w-4xl mx-auto space-y-6">
 
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
+        {/* Ticket Details Card */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1">
                 <h1 className="text-2xl font-bold text-gray-900 mb-2">{ticket.subject}</h1>
