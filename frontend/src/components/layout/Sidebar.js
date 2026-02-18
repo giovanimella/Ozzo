@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Users, ShoppingBag, Wallet, Settings, 
   Network, LogOut, Menu, X, Package, FileText, UserCircle, 
   BarChart3, ClipboardList, Trophy, Target, Link2, Store,
-  ChevronRight, Bell, TrendingUp, DollarSign, ChevronDown
+  ChevronRight, Bell, TrendingUp, DollarSign, ChevronDown, FileSpreadsheet
 } from 'lucide-react';
 import { cn, formatCurrency } from '../../lib/utils';
 
@@ -24,6 +24,7 @@ const getMenuItems = (accessLevel) => {
     items.push({ icon: Target, label: 'Metas', path: '/goals' });
     items.push({ section: 'Financeiro' });
     items.push({ icon: Wallet, label: 'Saques', path: '/withdrawals' });
+    items.push({ icon: FileSpreadsheet, label: 'Relatório de Saques', path: '/withdrawals-report' });
     items.push({ icon: FileText, label: 'Logs', path: '/logs' });
     items.push({ section: 'Loja' });
     items.push({ icon: Package, label: 'Produtos', path: '/products' });
