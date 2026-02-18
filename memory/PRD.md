@@ -99,6 +99,7 @@ Sistema de Marketing Multinível com 7 níveis de acesso hierárquicos, comissõ
 - [x] **Links de Indicação com Tracking** - Geração de links, rastreamento de cliques, estatísticas
 - [x] **Exportação de Relatórios** - CSV/JSON para vendas, comissões, usuários, rede
 - [x] **Dashboards por Nível de Acesso** - Supervisor, Líder, Cliente
+- [x] **Jobs Automáticos (APScheduler)** - Liberação de comissões diária, verificação de qualificações mensal
 
 ### Frontend (100% UI) - TODAS TESTADAS E FUNCIONAIS
 - [x] Landing page profissional
@@ -121,6 +122,7 @@ Sistema de Marketing Multinível com 7 níveis de acesso hierárquicos, comissõ
 - [x] **Página de Ranking (/ranking)** - Ranking com pódio, filtros por período/métrica
 - [x] **Página de Metas (/goals)** - CRUD de metas, progresso visual, conquistas
 - [x] **Página de Links de Indicação (/referral-links)** - Link, código, estatísticas, dicas
+- [x] **Página de Comissões (/commissions)** - Cards, filtros, histórico por nível
 
 ### Integrações (ESTRUTURA PRONTA - Requer Chaves de API)
 - [x] PagSeguro (estrutura pronta, credenciais via settings)
@@ -129,14 +131,15 @@ Sistema de Marketing Multinível com 7 níveis de acesso hierárquicos, comissõ
 - [x] Google OAuth (Emergent Auth - Funcional)
 
 ## Testing Status (Feb 18, 2026)
-- **Backend**: 100% (33/33 testes passaram) - Ranking, Metas, Referral Links, Export
+- **Backend**: 100% (18/18 testes passaram) - Comissões, Scheduler, Regressão
 - **Frontend**: 100% (Todas as páginas renderizam corretamente)
 - **Arquivos de testes**: 
   - `/app/backend/tests/test_mlm_vanguard.py`
   - `/app/backend/tests/test_new_features.py`
+  - `/app/backend/tests/test_commissions_scheduler.py`
 - **Relatórios**: 
-  - `/app/test_reports/iteration_3.json`
-  - `/app/test_reports/iteration_4.json`
+  - `/app/test_reports/iteration_6.json`
+  - `/app/test_reports/iteration_7.json`
 
 ## Prioritized Backlog
 
@@ -144,14 +147,14 @@ Sistema de Marketing Multinível com 7 níveis de acesso hierárquicos, comissõ
 - [ ] Ativar integração real com PagSeguro (requer chaves do usuário)
 - [ ] Ativar integração real com MercadoPago (requer chaves do usuário)
 - [ ] Envio de emails transacionais (Resend - requer chave do usuário)
-- [ ] Job automático de verificação de qualificação mensal (cron job)
+- [x] ~~Job automático de verificação de qualificação mensal~~ - APScheduler implementado
 
 ### P1 - High Priority
 - [x] ~~Relatórios exportáveis (PDF/Excel)~~ - CSV/JSON implementado
 - [x] ~~Ranking de revendedores~~ - Implementado com 4 métricas
 - [x] ~~Sistema de metas e bonificações~~ - Implementado com progresso e conquistas
+- [x] ~~Histórico detalhado de comissões~~ - Página /commissions implementada
 - [ ] Notificações push/email
-- [ ] Histórico detalhado de comissões
 
 ### P2 - Medium Priority
 - [x] ~~Sistema de links de indicação e tracking~~ - Implementado com estatísticas
@@ -166,8 +169,8 @@ Sistema de Marketing Multinível com 7 níveis de acesso hierárquicos, comissõ
 1. **Ativar PagSeguro** - Usuário precisa fornecer credenciais
 2. **Ativar MercadoPago** - Usuário precisa fornecer credenciais
 3. **Ativar Resend** - Usuário precisa fornecer API key
-4. Criar job de verificação mensal de qualificações (scheduler)
-5. Geração de QR Code para links de indicação
+4. Geração de QR Code para links de indicação
+5. Sistema de notificações push/email
 
 ## Technical Debt
 - Otimizar queries de árvore de rede (usar $graphLookup)
@@ -178,4 +181,4 @@ Sistema de Marketing Multinível com 7 níveis de acesso hierárquicos, comissõ
 - Migrar para React Router v7 (warnings atuais)
 
 ---
-*Last updated: February 18, 2026 - Ranking, Metas, Links de Indicação e Exportação implementados*
+*Last updated: February 18, 2026 - Página de Comissões e APScheduler implementados*
