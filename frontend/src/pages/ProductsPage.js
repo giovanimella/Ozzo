@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import DashboardLayout from '../components/layouts/DashboardLayout';
+import AppLayout, { StatCard, DashCard } from '../components/layout/AppLayout';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input, Textarea, Select } from '../components/ui/Input';
@@ -175,7 +175,7 @@ export default function ProductsPage() {
   };
 
   return (
-    <DashboardLayout>
+    <AppLayout title="Page">
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -476,6 +476,6 @@ export default function ProductsPage() {
           </div>
         </div>
       )}
-    </DashboardLayout>
+    </AppLayout>
   );
 }

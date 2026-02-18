@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import DashboardLayout from '../components/layouts/DashboardLayout';
+import AppLayout, { StatCard, DashCard } from '../components/layout/AppLayout';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -66,16 +66,16 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <DashboardLayout>
+      <AppLayout title="Page">
         <div className="flex items-center justify-center h-64">
           <div className="w-8 h-8 border-4 border-primary-main border-t-transparent rounded-full spinner" />
         </div>
-      </DashboardLayout>
+      </AppLayout>
     );
   }
 
   return (
-    <DashboardLayout>
+    <AppLayout title="Page">
       <div className="space-y-6 max-w-4xl">
         <div className="flex items-center justify-between">
           <div>
@@ -354,6 +354,6 @@ export default function SettingsPage() {
           </Button>
         </div>
       </div>
-    </DashboardLayout>
+    </AppLayout>
   );
 }

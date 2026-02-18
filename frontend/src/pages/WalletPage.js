@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import DashboardLayout from '../components/layouts/DashboardLayout';
+import AppLayout, { StatCard, DashCard } from '../components/layout/AppLayout';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -115,7 +115,7 @@ export default function WalletPage() {
   };
 
   return (
-    <DashboardLayout>
+    <AppLayout title="Page">
       <div className="space-y-6">
         <div>
           <h1 className="font-heading font-bold text-2xl text-primary-main" data-testid="wallet-title">
@@ -339,6 +339,6 @@ export default function WalletPage() {
           </div>
         </div>
       )}
-    </DashboardLayout>
+    </AppLayout>
   );
 }

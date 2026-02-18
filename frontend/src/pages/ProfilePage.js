@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth, ACCESS_LEVELS } from '../contexts/AuthContext';
-import DashboardLayout from '../components/layouts/DashboardLayout';
+import AppLayout, { StatCard, DashCard } from '../components/layout/AppLayout';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -67,7 +67,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <DashboardLayout>
+    <AppLayout title="Page">
       <div className="space-y-6 max-w-4xl">
         <div className="flex items-center justify-between">
           <div>
@@ -288,6 +288,6 @@ export default function ProfilePage() {
           </Button>
         </div>
       </div>
-    </DashboardLayout>
+    </AppLayout>
   );
 }
