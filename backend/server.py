@@ -589,6 +589,117 @@ async def set_ambassador_commission(request: Request, data: AmbassadorCommission
     
     return {"message": "Commission updated"}
 
+# ==================== USER MANAGEMENT (ADMIN) ====================
+
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    password: Optional[str] = None
+    access_level: Optional[int] = None
+    status: Optional[str] = None
+    cpf: Optional[str] = None
+    available_balance: Optional[float] = None
+    blocked_balance: Optional[float] = None
+    points: Optional[int] = None
+
+@app.put("/api/users/{user_id}")
+async def update_user(
+    request: Request, 
+    user_id: str, 
+    data: UserUpdate, 
+    current_user: dict = Depends(require_access_level(1))
+):
+    """Update user details (Admin only)"""
+    db = request.app.db
+    
+    # Find the user to update
+    target_user = await db.users.find_one({"user_id": user_id})
+    if not target_user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    
+    # Build update dict with only provided fields
+    update_data = {}
+    
+    if data.name is not None:
+        update_data["name"] = data.name
+    if data.email is not None:
+        # Check if email is already in use by another user
+        existing = await db.users.find_one({"email": data.email, "user_id": {"$ne": user_id}})
+        if existing:
+            raise HTTPException(status_code=400, detail="Email já está em uso")
+        update_data["email"] = data.email
+    if data.phone is not None:
+        update_data["phone"] = data.phone
+    if data.password:
+        update_data["password"] = pwd_context.hash(data.password)
+    if data.access_level is not None:
+        update_data["access_level"] = data.access_level
+    if data.status is not None:
+        update_data["status"] = data.status
+    if data.cpf is not None:
+        update_data["cpf"] = data.cpf
+    if data.available_balance is not None:
+        update_data["available_balance"] = data.available_balance
+    if data.blocked_balance is not None:
+        update_data["blocked_balance"] = data.blocked_balance
+    if data.points is not None:
+        update_data["points"] = data.points
+    
+    if not update_data:
+        raise HTTPException(status_code=400, detail="Nenhum campo para atualizar")
+    
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.users.update_one({"user_id": user_id}, {"$set": update_data})
+    
+    # Log the action
+    await db.logs.insert_one({
+        "log_id": generate_id("log_"),
+        "action": "user_updated",
+        "user_id": user_id,
+        "by_user_id": current_user["user_id"],
+        "details": {k: v for k, v in update_data.items() if k != "password"},
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    updated_user = await db.users.find_one({"user_id": user_id}, {"_id": 0, "password": 0})
+    return updated_user
+
+@app.delete("/api/users/{user_id}")
+async def delete_user(
+    request: Request, 
+    user_id: str, 
+    current_user: dict = Depends(require_access_level(0))
+):
+    """Delete user (Admin Técnico only)"""
+    db = request.app.db
+    
+    target_user = await db.users.find_one({"user_id": user_id})
+    if not target_user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    
+    # Don't allow deleting yourself
+    if user_id == current_user["user_id"]:
+        raise HTTPException(status_code=400, detail="Você não pode excluir sua própria conta")
+    
+    # Soft delete - just change status to cancelled
+    await db.users.update_one(
+        {"user_id": user_id}, 
+        {"$set": {"status": "cancelled", "deleted_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    await db.logs.insert_one({
+        "log_id": generate_id("log_"),
+        "action": "user_deleted",
+        "user_id": user_id,
+        "by_user_id": current_user["user_id"],
+        "details": {"name": target_user.get("name"), "email": target_user.get("email")},
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    return {"message": "Usuário excluído"}
+
 # ==================== NETWORK / HIERARCHY ====================
 
 @app.get("/api/network/tree")
