@@ -118,7 +118,7 @@ export default function ChatPage() {
         `${process.env.REACT_APP_BACKEND_URL}/api/chat/conversations/${selectedConversation.conversation_id}/message?message=${encodeURIComponent(messageText)}`,
         {
           method: 'POST',
-          headers: { 'Authorization': `Bearer {token}` }
+          headers: { 'Authorization': `Bearer ${token}` }
         }
       );
 
