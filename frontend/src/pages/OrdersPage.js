@@ -1,14 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import DashboardLayout from '../components/layouts/DashboardLayout';
-import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import { Badge } from '../components/ui/Badge';
+import AppLayout, { StatCard, DashCard } from '../components/layout/AppLayout';
 import { formatCurrency, formatDate, formatDateTime } from '../lib/utils';
 import { toast } from '../components/ui/toast';
 import { 
   Package, Eye, ChevronLeft, ChevronRight, 
-  Truck, CheckCircle, XCircle, Clock, CreditCard
+  Truck, CheckCircle, XCircle, Clock, CreditCard, X, ShoppingBag
 } from 'lucide-react';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || '';
