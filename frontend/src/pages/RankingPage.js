@@ -93,26 +93,16 @@ export default function RankingPage() {
   const MetricIcon = metricIcons[metric];
 
   return (
-    <DashboardLayout>
+    <AppLayout title="Ranking de Revendedores" subtitle="Veja os melhores desempenhos da rede">
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="font-heading font-bold text-2xl text-primary-main flex items-center gap-2" data-testid="ranking-title">
-              <Trophy className="w-7 h-7 text-accent-main" />
-              Ranking de Revendedores
-            </h1>
-            <p className="text-slate-600">Veja os melhores desempenhos da rede</p>
-          </div>
-        </div>
-
         {/* Filters */}
-        <div className="flex flex-wrap gap-4">
+        <div className="flex flex-wrap gap-4 bg-white rounded-xl border border-slate-100 shadow-sm p-4">
           <div className="flex items-center gap-2">
-            <label className="text-sm text-slate-600">Período:</label>
+            <label className="text-sm text-slate-600 font-medium">Período:</label>
             <select
               value={period}
               onChange={(e) => setPeriod(e.target.value)}
-              className="h-10 px-4 bg-white border border-slate-200 rounded-lg"
+              className="h-10 px-4 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-main focus:border-brand-main"
             >
               {Object.entries(periodLabels).map(([key, label]) => (
                 <option key={key} value={key}>{label}</option>
@@ -121,11 +111,11 @@ export default function RankingPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <label className="text-sm text-slate-600">Métrica:</label>
+            <label className="text-sm text-slate-600 font-medium">Métrica:</label>
             <select
               value={metric}
               onChange={(e) => setMetric(e.target.value)}
-              className="h-10 px-4 bg-white border border-slate-200 rounded-lg"
+              className="h-10 px-4 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-main focus:border-brand-main"
             >
               {Object.entries(metricLabels).map(([key, label]) => (
                 <option key={key} value={key}>{label}</option>
@@ -138,106 +128,102 @@ export default function RankingPage() {
         {!loading && ranking.length >= 3 && (
           <div className="grid grid-cols-3 gap-4 mb-8">
             {/* 2nd Place */}
-            <Card className="text-center pt-8 pb-6 border-2 border-slate-200">
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm text-center pt-8 pb-6">
               <div className="w-16 h-16 mx-auto bg-slate-100 rounded-full flex items-center justify-center mb-3">
                 <Medal className="w-8 h-8 text-slate-400" />
               </div>
               <p className="text-sm text-slate-500 mb-1">2º Lugar</p>
-              <h3 className="font-heading font-bold text-primary-main">{ranking[1]?.name}</h3>
-              <p className="text-accent-main font-bold mt-2">{getMetricValue(ranking[1])}</p>
-            </Card>
+              <h3 className="font-heading font-bold text-slate-900">{ranking[1]?.name}</h3>
+              <p className="text-brand-main font-bold mt-2">{getMetricValue(ranking[1])}</p>
+            </div>
 
             {/* 1st Place */}
-            <Card className="text-center pt-6 pb-6 border-2 border-yellow-400 bg-gradient-to-b from-yellow-50 to-white transform scale-105 shadow-lg">
-              <div className="w-20 h-20 mx-auto gold-gradient rounded-full flex items-center justify-center mb-3 shadow-lg">
+            <div className="bg-gradient-to-b from-amber-50 to-white rounded-xl border-2 border-amber-400 shadow-lg text-center pt-6 pb-6 transform scale-105">
+              <div className="w-20 h-20 mx-auto bg-gradient-to-br from-amber-400 to-yellow-500 rounded-full flex items-center justify-center mb-3 shadow-lg">
                 <Crown className="w-10 h-10 text-white" />
               </div>
-              <p className="text-sm text-yellow-600 mb-1 font-medium">1º Lugar</p>
-              <h3 className="font-heading font-bold text-xl text-primary-main">{ranking[0]?.name}</h3>
-              <p className="text-accent-main font-bold text-lg mt-2">{getMetricValue(ranking[0])}</p>
-            </Card>
+              <p className="text-sm text-amber-600 mb-1 font-medium">1º Lugar</p>
+              <h3 className="font-heading font-bold text-xl text-slate-900">{ranking[0]?.name}</h3>
+              <p className="text-brand-main font-bold text-lg mt-2">{getMetricValue(ranking[0])}</p>
+            </div>
 
             {/* 3rd Place */}
-            <Card className="text-center pt-8 pb-6 border-2 border-amber-200">
+            <div className="bg-white rounded-xl border border-amber-200 shadow-sm text-center pt-8 pb-6">
               <div className="w-16 h-16 mx-auto bg-amber-100 rounded-full flex items-center justify-center mb-3">
                 <Medal className="w-8 h-8 text-amber-600" />
               </div>
               <p className="text-sm text-slate-500 mb-1">3º Lugar</p>
-              <h3 className="font-heading font-bold text-primary-main">{ranking[2]?.name}</h3>
-              <p className="text-accent-main font-bold mt-2">{getMetricValue(ranking[2])}</p>
-            </Card>
+              <h3 className="font-heading font-bold text-slate-900">{ranking[2]?.name}</h3>
+              <p className="text-brand-main font-bold mt-2">{getMetricValue(ranking[2])}</p>
+            </div>
           </div>
         )}
 
         {/* Full Ranking List */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MetricIcon className="w-5 h-5" />
+        <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100">
+            <h3 className="font-heading font-semibold text-slate-900 flex items-center gap-2">
+              <MetricIcon className="w-5 h-5 text-brand-main" />
               Ranking por {metricLabels[metric]} - {periodLabels[period]}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {loading ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="w-8 h-8 border-4 border-primary-main border-t-transparent rounded-full spinner" />
-              </div>
-            ) : ranking.length === 0 ? (
-              <div className="text-center py-12">
-                <Trophy className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                <p className="text-slate-500">Nenhum dado de ranking disponível</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-slate-100">
-                {ranking.map((item, idx) => (
-                  <div
-                    key={item.user_id || idx}
-                    className={`flex items-center gap-4 p-4 ${getRankBg(idx + 1)} ${
-                      item.user_id === user?.user_id ? 'ring-2 ring-primary-main ring-inset' : ''
-                    }`}
-                  >
-                    <div className="w-10 h-10 flex items-center justify-center">
-                      {getRankIcon(idx + 1)}
-                    </div>
-                    
-                    <div className="w-12 h-12 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden">
-                      {item.picture ? (
-                        <img src={item.picture} alt={item.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <span className="text-slate-500 font-bold text-lg">
-                          {item.name?.charAt(0)?.toUpperCase()}
-                        </span>
-                      )}
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-primary-main truncate">
-                        {item.name}
-                        {item.user_id === user?.user_id && (
-                          <Badge variant="primary" className="ml-2">Você</Badge>
-                        )}
-                      </h4>
-                      <p className="text-sm text-slate-500">{item.email}</p>
-                    </div>
-                    
-                    <div className="text-right">
-                      <p className="font-heading font-bold text-lg text-primary-main">
-                        {getMetricValue(item)}
-                      </p>
-                      {metric === 'sales' && item.order_count && (
-                        <p className="text-xs text-slate-500">{item.order_count} pedidos</p>
-                      )}
-                      {metric === 'commissions' && item.commission_count && (
-                        <p className="text-xs text-slate-500">{item.commission_count} comissões</p>
-                      )}
-                    </div>
+            </h3>
+          </div>
+          
+          {loading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="w-8 h-8 border-4 border-brand-main border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : ranking.length === 0 ? (
+            <div className="text-center py-12">
+              <Trophy className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+              <p className="text-slate-500">Nenhum dado de ranking disponível</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-100">
+              {ranking.map((item, idx) => (
+                <div
+                  key={item.user_id || idx}
+                  className={`flex items-center gap-4 p-4 hover:bg-slate-50 transition-colors ${getRankBg(idx + 1)} ${
+                    item.user_id === user?.user_id ? 'ring-2 ring-brand-main ring-inset' : ''
+                  }`}
+                >
+                  <div className="w-10 h-10 flex items-center justify-center">
+                    {getRankIcon(idx + 1)}
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  
+                  <div className="w-12 h-12 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden">
+                    {item.picture ? (
+                      <img src={item.picture} alt={item.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-slate-500 font-bold text-lg">
+                        {item.name?.charAt(0)?.toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-medium text-slate-900 truncate">
+                      {item.name}
+                      {item.user_id === user?.user_id && (
+                        <span className="ml-2 px-2 py-0.5 text-xs font-medium bg-brand-main text-white rounded-full">Você</span>
+                      )}
+                    </h4>
+                    <p className="text-sm text-slate-500">{item.email}</p>
+                  </div>
+                  
+                  <div className="text-right">
+                    <p className="font-heading font-bold text-lg text-slate-900">
+                      {getMetricValue(item)}
+                    </p>
+                    {metric === 'sales' && item.order_count && (
+                      <p className="text-xs text-slate-500">{item.order_count} pedidos</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-    </DashboardLayout>
+    </AppLayout>
   );
 }
