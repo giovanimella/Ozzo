@@ -93,23 +93,23 @@ export default function Sidebar({ isOpen, onClose }) {
       {/* Mobile Overlay */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
+          className="fixed inset-0 bg-black/30 z-40 lg:hidden backdrop-blur-sm"
           onClick={onClose}
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - Light Theme */}
       <aside className={cn(
-        "fixed left-0 top-0 h-full w-sidebar bg-sidebar-bg z-50 flex flex-col shadow-2xl transition-transform duration-300 ease-out",
+        "fixed left-0 top-0 h-full w-sidebar bg-white z-50 flex flex-col border-r border-slate-200 transition-transform duration-300 ease-out",
         "lg:translate-x-0",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         {/* Profile Header */}
-        <div className="p-6 border-b border-sidebar-border">
+        <div className="p-6 border-b border-slate-100">
           <div className="flex flex-col items-center text-center">
             {/* Avatar */}
             <div className="relative mb-4">
-              <div className="w-20 h-20 rounded-full bg-slate-700 overflow-hidden ring-4 ring-slate-800">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-brand-main to-blue-400 overflow-hidden ring-4 ring-blue-50">
                 {user?.picture ? (
                   <img 
                     src={user.picture} 
@@ -122,14 +122,14 @@ export default function Sidebar({ isOpen, onClose }) {
                   </div>
                 )}
               </div>
-              <span className="absolute bottom-1 right-1 w-4 h-4 bg-success-main rounded-full border-2 border-sidebar-bg" />
+              <span className="absolute bottom-1 right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white" />
             </div>
             
             {/* Name & Role */}
-            <h3 className="font-heading font-bold text-lg text-white truncate max-w-full">
+            <h3 className="font-heading font-bold text-lg text-slate-900 truncate max-w-full">
               {user?.name || 'Usuário'}
             </h3>
-            <p className="text-sm text-slate-400 mt-0.5">
+            <p className="text-sm text-slate-500 mt-0.5">
               {ACCESS_LEVELS[accessLevel]?.name || 'Usuário'}
             </p>
 
@@ -137,8 +137,8 @@ export default function Sidebar({ isOpen, onClose }) {
             <div className="flex items-center justify-center gap-4 mt-4 w-full">
               {userStats.map((stat, idx) => (
                 <div key={idx} className="flex flex-col items-center">
-                  <stat.icon className="w-4 h-4 text-slate-500 mb-1" />
-                  <span className="text-sm font-bold text-white">{stat.value}</span>
+                  <stat.icon className="w-4 h-4 text-slate-400 mb-1" />
+                  <span className="text-sm font-bold text-slate-900">{stat.value}</span>
                   <span className="text-xs text-slate-500">{stat.label}</span>
                 </div>
               ))}
@@ -152,7 +152,7 @@ export default function Sidebar({ isOpen, onClose }) {
             if (item.section) {
               return (
                 <div key={`section-${index}`} className="pt-4 pb-2 px-3 first:pt-0">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                     {item.section}
                   </span>
                 </div>
@@ -172,7 +172,7 @@ export default function Sidebar({ isOpen, onClose }) {
                   "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200",
                   isActive 
                     ? "bg-brand-main text-white shadow-lg shadow-brand-main/25" 
-                    : "text-slate-300 hover:bg-sidebar-hover hover:text-white"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                 )}
               >
                 <Icon className="w-5 h-5 flex-shrink-0" strokeWidth={1.5} />
@@ -186,11 +186,11 @@ export default function Sidebar({ isOpen, onClose }) {
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-sidebar-border space-y-2">
+        <div className="p-4 border-t border-slate-100 space-y-2">
           <Link
             to="/store"
             onClick={onClose}
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:bg-sidebar-hover hover:text-white transition-all"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all"
           >
             <Store className="w-5 h-5" strokeWidth={1.5} />
             <span>Ir para Loja</span>
@@ -198,7 +198,7 @@ export default function Sidebar({ isOpen, onClose }) {
           <Link
             to="/profile"
             onClick={onClose}
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:bg-sidebar-hover hover:text-white transition-all"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all"
           >
             <UserCircle className="w-5 h-5" strokeWidth={1.5} />
             <span>Meu Perfil</span>
@@ -206,7 +206,7 @@ export default function Sidebar({ isOpen, onClose }) {
           <button
             onClick={handleLogout}
             data-testid="logout-btn"
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 hover:text-red-600 transition-all"
           >
             <LogOut className="w-5 h-5" strokeWidth={1.5} />
             <span>Sair</span>
