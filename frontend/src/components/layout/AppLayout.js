@@ -58,13 +58,7 @@ export default function AppLayout({ children, title, subtitle, showBack = false 
 
             {/* Right: Notifications + Avatar */}
             <div className="flex items-center gap-2">
-              <button 
-                className="relative p-2 rounded-xl active:bg-white/10 transition-colors"
-                data-testid="notifications-btn"
-              >
-                <Bell className="w-5 h-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-400 rounded-full ring-2 ring-blue-600" />
-              </button>
+              <NotificationsDropdown />
               
               <div className="w-9 h-9 rounded-full bg-white/20 overflow-hidden ring-2 ring-white/30">
                 {user?.picture ? (
