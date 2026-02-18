@@ -69,7 +69,32 @@ async def lifespan(app: FastAPI):
     # Initialize default admin and settings
     await initialize_defaults(app.db)
     
+    # Setup scheduled jobs
+    # Daily job: Release blocked commissions that are past 7 days
+    scheduler.add_job(
+        release_commissions_job,
+        CronTrigger(hour=2, minute=0),  # Run daily at 2:00 AM
+        args=[app.db],
+        id="release_commissions",
+        replace_existing=True
+    )
+    
+    # Monthly job: Check qualifications on the 1st day of each month
+    scheduler.add_job(
+        check_qualifications_job,
+        CronTrigger(day=1, hour=3, minute=0),  # Run on 1st day at 3:00 AM
+        args=[app.db],
+        id="check_qualifications",
+        replace_existing=True
+    )
+    
+    scheduler.start()
+    logger.info("Scheduler started with jobs: release_commissions, check_qualifications")
+    
     yield
+    
+    scheduler.shutdown()
+    logger.info("Scheduler stopped")
     app.mongodb_client.close()
     logger.info("Disconnected from MongoDB")
 
