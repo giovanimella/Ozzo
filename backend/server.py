@@ -1251,7 +1251,9 @@ async def request_withdrawal(request: Request, data: WithdrawalRequest, user: di
         "created_at": datetime.now(timezone.utc).isoformat()
     })
     
-    return withdrawal
+    # Re-fetch withdrawal without _id
+    withdrawal_response = await db.withdrawals.find_one({"withdrawal_id": withdrawal["withdrawal_id"]}, {"_id": 0})
+    return withdrawal_response
 
 @app.get("/api/wallet/withdrawals")
 async def list_withdrawals(
