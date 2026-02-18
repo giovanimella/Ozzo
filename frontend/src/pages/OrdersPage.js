@@ -68,44 +68,47 @@ export default function OrdersPage() {
 
   const getStatusBadge = (status) => {
     const config = {
-      pending: { variant: 'warning', label: 'Pendente', icon: Clock },
-      paid: { variant: 'info', label: 'Pago', icon: CreditCard },
-      shipped: { variant: 'default', label: 'Enviado', icon: Truck },
-      delivered: { variant: 'success', label: 'Entregue', icon: CheckCircle },
-      cancelled: { variant: 'error', label: 'Cancelado', icon: XCircle },
+      pending: { color: 'bg-amber-100 text-amber-700', label: 'Pendente', icon: Clock },
+      paid: { color: 'bg-blue-100 text-blue-700', label: 'Pago', icon: CreditCard },
+      shipped: { color: 'bg-purple-100 text-purple-700', label: 'Enviado', icon: Truck },
+      delivered: { color: 'bg-emerald-100 text-emerald-700', label: 'Entregue', icon: CheckCircle },
+      cancelled: { color: 'bg-red-100 text-red-700', label: 'Cancelado', icon: XCircle },
     };
-    const { variant, label, icon: Icon } = config[status] || config.pending;
+    const { color, label, icon: Icon } = config[status] || config.pending;
     return (
-      <Badge variant={variant} className="flex items-center gap-1">
+      <span className={`flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${color}`}>
         <Icon className="w-3 h-3" />
         {label}
-      </Badge>
+      </span>
     );
   };
 
   const getPaymentBadge = (status) => {
     return status === 'paid' 
-      ? <Badge variant="success">Pago</Badge>
-      : <Badge variant="warning">Pendente</Badge>;
+      ? <span className="px-2 py-1 text-xs font-medium rounded-full bg-emerald-100 text-emerald-700">Pago</span>
+      : <span className="px-2 py-1 text-xs font-medium rounded-full bg-amber-100 text-amber-700">Pendente</span>;
   };
 
   return (
-    <DashboardLayout>
+    <AppLayout 
+      title={accessLevel <= 2 ? 'Todos os Pedidos' : 'Meus Pedidos'} 
+      subtitle={accessLevel <= 2 ? 'Gerencie todos os pedidos do sistema' : 'Acompanhe seus pedidos'}
+    >
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="font-heading font-bold text-2xl text-primary-main" data-testid="orders-title">
-              {accessLevel <= 2 ? 'Todos os Pedidos' : 'Meus Pedidos'}
-            </h1>
-            <p className="text-slate-600">
-              {accessLevel <= 2 ? 'Gerencie todos os pedidos do sistema' : 'Acompanhe seus pedidos'}
-            </p>
-          </div>
+        {/* Stats */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard icon={ShoppingBag} label="Total de Pedidos" value={orders.length} color="blue" />
+          <StatCard icon={Clock} label="Pendentes" value={orders.filter(o => o.order_status === 'pending').length} color="amber" />
+          <StatCard icon={Truck} label="Enviados" value={orders.filter(o => o.order_status === 'shipped').length} color="purple" />
+          <StatCard icon={CheckCircle} label="Entregues" value={orders.filter(o => o.order_status === 'delivered').length} color="green" />
+        </div>
 
+        {/* Filter */}
+        <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
           <select
             value={statusFilter}
             onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-            className="h-10 px-4 bg-white border border-slate-200 rounded-lg"
+            className="h-10 px-4 bg-slate-50 border border-slate-200 rounded-lg"
           >
             <option value="">Todos os status</option>
             <option value="pending">Pendente</option>
@@ -117,37 +120,36 @@ export default function OrdersPage() {
         </div>
 
         {/* Orders List */}
-        <Card>
-          <CardContent className="p-0">
-            {loading ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="w-8 h-8 border-4 border-primary-main border-t-transparent rounded-full spinner" />
-              </div>
-            ) : orders.length === 0 ? (
-              <div className="text-center py-12">
-                <Package className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                <p className="text-slate-500">Nenhum pedido encontrado</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-slate-100">
-                      <th className="text-left p-4 font-medium text-slate-600">Pedido</th>
-                      <th className="text-left p-4 font-medium text-slate-600">Data</th>
-                      <th className="text-left p-4 font-medium text-slate-600">Itens</th>
-                      <th className="text-left p-4 font-medium text-slate-600">Total</th>
-                      <th className="text-left p-4 font-medium text-slate-600">Pagamento</th>
-                      <th className="text-left p-4 font-medium text-slate-600">Status</th>
-                      <th className="text-right p-4 font-medium text-slate-600">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {orders.map((order) => (
-                      <tr key={order.order_id} className="border-b border-slate-50 hover:bg-slate-50">
-                        <td className="p-4">
-                          <span className="font-mono text-sm font-medium text-primary-main">
-                            #{order.order_id.slice(-8).toUpperCase()}
+        <DashCard noPadding>
+          {loading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="w-8 h-8 border-4 border-brand-main border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : orders.length === 0 ? (
+            <div className="text-center py-12">
+              <Package className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+              <p className="text-slate-500">Nenhum pedido encontrado</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-slate-100 bg-slate-50">
+                    <th className="text-left p-4 font-medium text-slate-600 text-sm">Pedido</th>
+                    <th className="text-left p-4 font-medium text-slate-600 text-sm">Data</th>
+                    <th className="text-left p-4 font-medium text-slate-600 text-sm">Itens</th>
+                    <th className="text-left p-4 font-medium text-slate-600 text-sm">Total</th>
+                    <th className="text-left p-4 font-medium text-slate-600 text-sm">Pagamento</th>
+                    <th className="text-left p-4 font-medium text-slate-600 text-sm">Status</th>
+                    <th className="text-right p-4 font-medium text-slate-600 text-sm">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {orders.map((order) => (
+                    <tr key={order.order_id} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                      <td className="p-4">
+                        <span className="font-mono text-sm font-medium text-slate-900">
+                          #{order.order_id.slice(-8).toUpperCase()}
                           </span>
                         </td>
                         <td className="p-4 text-sm text-slate-600">
