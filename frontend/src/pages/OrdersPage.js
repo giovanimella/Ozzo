@@ -283,14 +283,14 @@ export default function OrdersPage() {
                   </div>
                   <div className="flex justify-between font-bold text-lg">
                     <span>Total</span>
-                    <span className="text-primary-main">{formatCurrency(selectedOrder.total)}</span>
+                    <span className="text-brand-main">{formatCurrency(selectedOrder.total)}</span>
                   </div>
                 </div>
               </div>
 
               {/* Referrer info */}
               {selectedOrder.referrer_id && (
-                <div className="p-3 bg-accent-light/20 rounded-lg">
+                <div className="p-3 bg-amber-50 rounded-lg">
                   <p className="text-sm text-slate-600">
                     Indicado por: <strong>{selectedOrder.referrer_type}</strong>
                   </p>
@@ -303,39 +303,50 @@ export default function OrdersPage() {
               {accessLevel <= 2 && selectedOrder.order_status !== 'cancelled' && (
                 <div className="flex flex-wrap gap-2 mb-4">
                   {selectedOrder.order_status === 'pending' && (
-                    <Button size="sm" onClick={() => updateOrderStatus(selectedOrder.order_id, 'paid')}>
+                    <button 
+                      onClick={() => updateOrderStatus(selectedOrder.order_id, 'paid')}
+                      className="px-4 py-2 bg-brand-main text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                    >
                       Marcar como Pago
-                    </Button>
+                    </button>
                   )}
                   {selectedOrder.order_status === 'paid' && (
-                    <Button size="sm" onClick={() => updateOrderStatus(selectedOrder.order_id, 'shipped')}>
+                    <button 
+                      onClick={() => updateOrderStatus(selectedOrder.order_id, 'shipped')}
+                      className="px-4 py-2 bg-brand-main text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                    >
                       Marcar como Enviado
-                    </Button>
+                    </button>
                   )}
                   {selectedOrder.order_status === 'shipped' && (
-                    <Button size="sm" onClick={() => updateOrderStatus(selectedOrder.order_id, 'delivered')}>
+                    <button 
+                      onClick={() => updateOrderStatus(selectedOrder.order_id, 'delivered')}
+                      className="px-4 py-2 bg-brand-main text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                    >
                       Marcar como Entregue
-                    </Button>
+                    </button>
                   )}
                   {['pending', 'paid'].includes(selectedOrder.order_status) && (
-                    <Button 
-                      variant="danger" 
-                      size="sm" 
+                    <button 
                       onClick={() => updateOrderStatus(selectedOrder.order_id, 'cancelled')}
+                      className="px-4 py-2 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600 transition-colors"
                     >
                       Cancelar Pedido
-                    </Button>
+                    </button>
                   )}
                 </div>
               )}
               
-              <Button variant="secondary" onClick={() => setSelectedOrder(null)} className="w-full">
+              <button 
+                onClick={() => setSelectedOrder(null)} 
+                className="w-full px-4 py-2.5 border border-slate-200 text-slate-700 font-medium rounded-xl hover:bg-slate-50 transition-colors"
+              >
                 Fechar
-              </Button>
+              </button>
             </div>
           </div>
         </div>
       )}
-    </DashboardLayout>
+    </AppLayout>
   );
 }
