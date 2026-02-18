@@ -21,6 +21,9 @@ import OrdersPage from './pages/OrdersPage';
 import WithdrawalsAdminPage from './pages/WithdrawalsAdminPage';
 import LogsPage from './pages/LogsPage';
 import ReportsPage from './pages/ReportsPage';
+import RankingPage from './pages/RankingPage';
+import GoalsPage from './pages/GoalsPage';
+import ReferralLinksPage from './pages/ReferralLinksPage';
 
 // Protected Route Component
 function ProtectedRoute({ children, minAccessLevel = 99 }) {
