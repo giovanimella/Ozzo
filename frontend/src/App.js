@@ -24,6 +24,7 @@ import ReportsPage from './pages/ReportsPage';
 import RankingPage from './pages/RankingPage';
 import GoalsPage from './pages/GoalsPage';
 import ReferralLinksPage from './pages/ReferralLinksPage';
+import CommissionsPage from './pages/CommissionsPage';
 
 // Protected Route Component
 function ProtectedRoute({ children, minAccessLevel = 99 }) {
@@ -91,6 +92,11 @@ function AppRouter() {
       <Route path="/my-orders" element={
         <ProtectedRoute>
           <OrdersPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/commissions" element={
+        <ProtectedRoute>
+          <CommissionsPage />
         </ProtectedRoute>
       } />
 
