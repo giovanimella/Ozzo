@@ -100,6 +100,21 @@ function AppRouter() {
           <NetworkPage />
         </ProtectedRoute>
       } />
+      <Route path="/ranking" element={
+        <ProtectedRoute minAccessLevel={4}>
+          <RankingPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/goals" element={
+        <ProtectedRoute minAccessLevel={6}>
+          <GoalsPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/referral-links" element={
+        <ProtectedRoute minAccessLevel={6}>
+          <ReferralLinksPage />
+        </ProtectedRoute>
+      } />
 
       {/* Supervisor Routes */}
       <Route path="/my-portfolio" element={
