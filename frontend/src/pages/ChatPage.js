@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useWebSocket } from '../contexts/WebSocketContext';
 import DashboardLayout from '../components/layouts/DashboardLayout';
-import { MessageSquare, Send, Search, Circle } from 'lucide-react';
+import { MessageSquare, Send, Search, Circle, User, Phone, Video } from 'lucide-react';
 
 export default function ChatPage() {
   const { user } = useAuth();
