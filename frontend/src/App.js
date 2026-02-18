@@ -158,6 +158,11 @@ function AppRouter() {
           <WithdrawalsAdminPage />
         </ProtectedRoute>
       } />
+      <Route path="/withdrawals-report" element={
+        <ProtectedRoute minAccessLevel={1}>
+          <WithdrawalsReportPage />
+        </ProtectedRoute>
+      } />
       <Route path="/logs" element={
         <ProtectedRoute minAccessLevel={1}>
           <LogsPage />
@@ -166,6 +171,13 @@ function AppRouter() {
       <Route path="/orders" element={
         <ProtectedRoute minAccessLevel={1}>
           <OrdersPage />
+        </ProtectedRoute>
+      } />
+
+      {/* Supervisor Routes */}
+      <Route path="/my-portfolio" element={
+        <ProtectedRoute minAccessLevel={2}>
+          <SupervisedUsersPage />
         </ProtectedRoute>
       } />
 
