@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { WebSocketProvider } from './contexts/WebSocketContext';
 import { ToastProvider } from './components/ui/toast';
 
 // Pages
@@ -28,6 +29,9 @@ import CommissionsPage from './pages/CommissionsPage';
 import InvitePage from './pages/InvitePage';
 import WithdrawalsReportPage from './pages/WithdrawalsReportPage';
 import SupervisedUsersPage from './pages/SupervisedUsersPage';
+import SupportPage from './pages/SupportPage';
+import TicketDetailPage from './pages/TicketDetailPage';
+import ChatPage from './pages/ChatPage';
 
 // Protected Route Component
 function ProtectedRoute({ children, minAccessLevel = 99 }) {
