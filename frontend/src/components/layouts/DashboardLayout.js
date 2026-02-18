@@ -4,7 +4,7 @@ import { useAuth, ACCESS_LEVELS } from '../../contexts/AuthContext';
 import { 
   LayoutDashboard, Users, ShoppingBag, Wallet, Settings, 
   Network, LogOut, Menu, X, ChevronDown, Package,
-  FileText, Bell, UserCircle, BarChart3
+  FileText, Bell, UserCircle, BarChart3, ClipboardList
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -17,6 +17,7 @@ const getMenuItems = (accessLevel) => {
   // Admin Técnico (0) e Admin Geral (1)
   if (accessLevel <= 1) {
     items.push({ icon: Users, label: 'Usuários', path: '/users' });
+    items.push({ icon: ClipboardList, label: 'Pedidos', path: '/orders' });
     items.push({ icon: BarChart3, label: 'Relatórios', path: '/reports' });
     items.push({ icon: Wallet, label: 'Saques', path: '/withdrawals' });
     items.push({ icon: FileText, label: 'Logs', path: '/logs' });
@@ -47,6 +48,7 @@ const getMenuItems = (accessLevel) => {
 
   // Embaixador (6)
   if (accessLevel === 6) {
+    items.push({ icon: ShoppingBag, label: 'Meus Pedidos', path: '/my-orders' });
     items.push({ icon: Wallet, label: 'Minhas Comissões', path: '/wallet' });
   }
 
