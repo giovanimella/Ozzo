@@ -6,7 +6,8 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Badge } from '../components/ui/Badge';
 import { toast } from '../components/ui/toast';
-import { User, Mail, Phone, CreditCard, MapPin, Save, Copy } from 'lucide-react';
+import { User, Mail, Phone, CreditCard, MapPin, Save, Copy, Bell } from 'lucide-react';
+import NotificationSettings from '../components/NotificationSettings';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -278,6 +279,19 @@ export default function ProfilePage() {
                 placeholder="CPF, Email, Telefone ou Chave Aleatória"
               />
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Notifications */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bell className="w-5 h-5" />
+              Notificações
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <NotificationSettings />
           </CardContent>
         </Card>
 
