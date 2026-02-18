@@ -3434,6 +3434,415 @@ async def health_check(request: Request):
     except Exception as e:
         return {"status": "unhealthy", "database": str(e)}
 
+# ==================== WEBSOCKET CHAT ====================
+
+from fastapi import WebSocket, WebSocketDisconnect
+from typing import Dict, Set
+
+# Connection manager for WebSocket
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: Dict[str, Set[WebSocket]] = {}
+    
+    async def connect(self, user_id: str, websocket: WebSocket):
+        await websocket.accept()
+        if user_id not in self.active_connections:
+            self.active_connections[user_id] = set()
+        self.active_connections[user_id].add(websocket)
+        logger.info(f"User {user_id} connected to WebSocket")
+    
+    def disconnect(self, user_id: str, websocket: WebSocket):
+        if user_id in self.active_connections:
+            self.active_connections[user_id].discard(websocket)
+            if not self.active_connections[user_id]:
+                del self.active_connections[user_id]
+        logger.info(f"User {user_id} disconnected from WebSocket")
+    
+    async def send_personal_message(self, user_id: str, message: dict):
+        if user_id in self.active_connections:
+            for connection in self.active_connections[user_id]:
+                try:
+                    await connection.send_json(message)
+                except Exception as e:
+                    logger.error(f"Error sending message to {user_id}: {e}")
+    
+    async def broadcast_to_conversation(self, conversation_id: str, message: dict, db):
+        """Send message to all participants in a conversation"""
+        conversation = await db.conversations.find_one({"conversation_id": conversation_id})
+        if conversation:
+            for participant_id in conversation.get("participants", []):
+                await self.send_personal_message(participant_id, message)
+
+manager = ConnectionManager()
+
+class ConversationCreate(BaseModel):
+    participant_id: str  # Who to start conversation with
+    message: str  # Initial message
+
+@app.post("/api/chat/conversations")
+async def create_conversation(request: Request, data: ConversationCreate, user: dict = Depends(get_current_user)):
+    """Start a new conversation"""
+    db = request.app.db
+    
+    # Get participant
+    participant = await db.users.find_one({"user_id": data.participant_id}, {"_id": 0})
+    if not participant:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Check permissions
+    user_level = user.get("access_level")
+    participant_level = participant.get("access_level")
+    
+    # Revendedor/Líder can only talk to their supervisor
+    if user_level in [3, 4]:
+        if participant_id := user.get("supervisor_id"):
+            if data.participant_id != participant_id:
+                raise HTTPException(status_code=403, detail="You can only chat with your supervisor")
+        else:
+            raise HTTPException(status_code=400, detail="No supervisor assigned")
+    
+    # Embaixador can talk to any supervisor or admin
+    if user_level == 6:
+        if participant_level not in [0, 1, 2]:
+            raise HTTPException(status_code=403, detail="Ambassadors can only chat with supervisors or admins")
+    
+    # Check if conversation already exists
+    existing = await db.conversations.find_one({
+        "participants": {"$all": [user["user_id"], data.participant_id]}
+    })
+    
+    if existing:
+        conversation_id = existing["conversation_id"]
+    else:
+        # Create new conversation
+        conversation = {
+            "conversation_id": generate_id("conv_"),
+            "participants": [user["user_id"], data.participant_id],
+            "participant_names": {
+                user["user_id"]: user.get("name"),
+                data.participant_id: participant.get("name")
+            },
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "last_message_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.conversations.insert_one(conversation)
+        conversation_id = conversation["conversation_id"]
+    
+    # Send initial message
+    message = {
+        "message_id": generate_id("msg_"),
+        "conversation_id": conversation_id,
+        "sender_id": user["user_id"],
+        "content": data.message,
+        "read": False,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.messages.insert_one(message)
+    
+    # Update conversation last message
+    await db.conversations.update_one(
+        {"conversation_id": conversation_id},
+        {"$set": {"last_message_at": message["created_at"], "last_message": data.message}}
+    )
+    
+    # Send via WebSocket
+    await manager.broadcast_to_conversation(
+        conversation_id,
+        {
+            "type": "new_message",
+            "conversation_id": conversation_id,
+            "message": message
+        },
+        db
+    )
+    
+    # Create notification
+    await create_notification(
+        db,
+        data.participant_id,
+        f"Nova Mensagem de {user.get('name')} 💬",
+        data.message[:100],
+        "chat",
+        {"url": f"/chat/{conversation_id}", "conversation_id": conversation_id}
+    )
+    
+    return {"conversation_id": conversation_id, "message": message}
+
+@app.get("/api/chat/conversations")
+async def list_conversations(request: Request, user: dict = Depends(get_current_user)):
+    """List all conversations for the user"""
+    db = request.app.db
+    
+    conversations = await db.conversations.find(
+        {"participants": user["user_id"]},
+        {"_id": 0}
+    ).sort("last_message_at", -1).to_list(100)
+    
+    # Add unread count for each conversation
+    for conv in conversations:
+        unread = await db.messages.count_documents({
+            "conversation_id": conv["conversation_id"],
+            "sender_id": {"$ne": user["user_id"]},
+            "read": False
+        })
+        conv["unread_count"] = unread
+        
+        # Get other participant info
+        other_id = [p for p in conv["participants"] if p != user["user_id"]][0]
+        other_user = await db.users.find_one(
+            {"user_id": other_id},
+            {"_id": 0, "name": 1, "email": 1, "access_level": 1, "picture": 1}
+        )
+        conv["other_user"] = other_user
+    
+    return {"conversations": conversations}
+
+@app.get("/api/chat/conversations/{conversation_id}")
+async def get_conversation_messages(
+    request: Request,
+    conversation_id: str,
+    page: int = 1,
+    limit: int = 50,
+    user: dict = Depends(get_current_user)
+):
+    """Get messages from a conversation"""
+    db = request.app.db
+    
+    # Check access
+    conversation = await db.conversations.find_one({"conversation_id": conversation_id})
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    
+    if user["user_id"] not in conversation["participants"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Get messages
+    total = await db.messages.count_documents({"conversation_id": conversation_id})
+    messages = await db.messages.find(
+        {"conversation_id": conversation_id},
+        {"_id": 0}
+    ).sort("created_at", -1).skip((page-1)*limit).limit(limit).to_list(limit)
+    
+    # Reverse to show oldest first
+    messages.reverse()
+    
+    # Mark messages as read
+    await db.messages.update_many(
+        {
+            "conversation_id": conversation_id,
+            "sender_id": {"$ne": user["user_id"]},
+            "read": False
+        },
+        {"$set": {"read": True, "read_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    return {
+        "conversation": conversation,
+        "messages": messages,
+        "total": total,
+        "page": page
+    }
+
+@app.post("/api/chat/conversations/{conversation_id}/message")
+async def send_message(
+    request: Request,
+    conversation_id: str,
+    message: str = Query(...),
+    user: dict = Depends(get_current_user)
+):
+    """Send a message in a conversation"""
+    db = request.app.db
+    
+    # Check access
+    conversation = await db.conversations.find_one({"conversation_id": conversation_id})
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    
+    if user["user_id"] not in conversation["participants"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Create message
+    msg = {
+        "message_id": generate_id("msg_"),
+        "conversation_id": conversation_id,
+        "sender_id": user["user_id"],
+        "content": message,
+        "read": False,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.messages.insert_one(msg)
+    
+    # Update conversation
+    await db.conversations.update_one(
+        {"conversation_id": conversation_id},
+        {"$set": {"last_message_at": msg["created_at"], "last_message": message}}
+    )
+    
+    # Send via WebSocket
+    await manager.broadcast_to_conversation(
+        conversation_id,
+        {
+            "type": "new_message",
+            "conversation_id": conversation_id,
+            "message": msg
+        },
+        db
+    )
+    
+    # Notify other participant
+    other_id = [p for p in conversation["participants"] if p != user["user_id"]][0]
+    await create_notification(
+        db,
+        other_id,
+        f"Nova Mensagem de {user.get('name')} 💬",
+        message[:100],
+        "chat",
+        {"url": f"/chat/{conversation_id}", "conversation_id": conversation_id}
+    )
+    
+    await send_push_notification(
+        db,
+        other_id,
+        f"Nova Mensagem de {user.get('name')} 💬",
+        message[:100],
+        {"url": f"/chat/{conversation_id}", "type": "chat"}
+    )
+    
+    msg_response = await db.messages.find_one({"message_id": msg["message_id"]}, {"_id": 0})
+    return msg_response
+
+@app.websocket("/ws/chat/{user_id}")
+async def websocket_chat_endpoint(websocket: WebSocket, user_id: str):
+    """WebSocket endpoint for real-time chat"""
+    await manager.connect(user_id, websocket)
+    try:
+        while True:
+            # Keep connection alive and receive messages
+            data = await websocket.receive_json()
+            
+            # Handle different message types
+            if data.get("type") == "ping":
+                await websocket.send_json({"type": "pong"})
+            elif data.get("type") == "typing":
+                # Broadcast typing indicator to conversation
+                conversation_id = data.get("conversation_id")
+                if conversation_id:
+                    db = app.db
+                    await manager.broadcast_to_conversation(
+                        conversation_id,
+                        {
+                            "type": "typing",
+                            "user_id": user_id,
+                            "conversation_id": conversation_id
+                        },
+                        db
+                    )
+    except WebSocketDisconnect:
+        manager.disconnect(user_id, websocket)
+    except Exception as e:
+        logger.error(f"WebSocket error for user {user_id}: {e}")
+        manager.disconnect(user_id, websocket)
+
+@app.get("/api/chat/contacts")
+async def get_chat_contacts(request: Request, user: dict = Depends(get_current_user)):
+    """Get list of users the current user can chat with"""
+    db = request.app.db
+    
+    user_level = user.get("access_level")
+    contacts = []
+    
+    # Revendedor/Líder - only their supervisor
+    if user_level in [3, 4]:
+        supervisor_id = user.get("supervisor_id")
+        if supervisor_id:
+            supervisor = await db.users.find_one(
+                {"user_id": supervisor_id},
+                {"_id": 0, "user_id": 1, "name": 1, "email": 1, "access_level": 1, "picture": 1}
+            )
+            if supervisor:
+                contacts.append(supervisor)
+    
+    # Embaixador - all supervisors and admins
+    elif user_level == 6:
+        staff = await db.users.find(
+            {"access_level": {"$in": [0, 1, 2]}, "status": "active"},
+            {"_id": 0, "user_id": 1, "name": 1, "email": 1, "access_level": 1, "picture": 1}
+        ).to_list(100)
+        contacts.extend(staff)
+    
+    # Supervisor - their assigned users + admins
+    elif user_level == 2:
+        # Get supervised users
+        supervised = await db.users.find(
+            {"supervisor_id": user["user_id"], "status": "active"},
+            {"_id": 0, "user_id": 1, "name": 1, "email": 1, "access_level": 1, "picture": 1}
+        ).to_list(100)
+        contacts.extend(supervised)
+        
+        # Get admins
+        admins = await db.users.find(
+            {"access_level": {"$in": [0, 1]}, "status": "active"},
+            {"_id": 0, "user_id": 1, "name": 1, "email": 1, "access_level": 1, "picture": 1}
+        ).to_list(100)
+        contacts.extend(admins)
+    
+    # Admin - all users except themselves
+    elif user_level <= 1:
+        all_users = await db.users.find(
+            {"user_id": {"$ne": user["user_id"]}, "status": "active"},
+            {"_id": 0, "user_id": 1, "name": 1, "email": 1, "access_level": 1, "picture": 1}
+        ).sort("name", 1).to_list(1000)
+        contacts.extend(all_users)
+    
+    return {"contacts": contacts}
+
+# ==================== WEBSOCKET NOTIFICATIONS ====================
+
+@app.websocket("/ws/notifications/{user_id}")
+async def websocket_notifications_endpoint(websocket: WebSocket, user_id: str):
+    """WebSocket endpoint for real-time notifications"""
+    await manager.connect(user_id, websocket)
+    try:
+        while True:
+            # Keep connection alive
+            data = await websocket.receive_json()
+            
+            if data.get("type") == "ping":
+                await websocket.send_json({"type": "pong"})
+    except WebSocketDisconnect:
+        manager.disconnect(user_id, websocket)
+    except Exception as e:
+        logger.error(f"WebSocket notifications error for user {user_id}: {e}")
+        manager.disconnect(user_id, websocket)
+
+async def send_realtime_notification(db, user_id: str, notification: dict):
+    """Send notification via WebSocket if user is connected, fallback to push"""
+    # Try WebSocket first
+    await manager.send_personal_message(user_id, {
+        "type": "notification",
+        "notification": notification
+    })
+    
+    # Always create in-app notification
+    await create_notification(
+        db,
+        user_id,
+        notification.get("title", ""),
+        notification.get("body", ""),
+        notification.get("notification_type", "system"),
+        notification.get("data")
+    )
+    
+    # Fallback to push notification if offline
+    if user_id not in manager.active_connections:
+        await send_push_notification(
+            db,
+            user_id,
+            notification.get("title", ""),
+            notification.get("body", ""),
+            notification.get("data")
+        )
+
 # ==================== PUSH NOTIFICATIONS ====================
 
 # VAPID keys for push notifications (generate your own for production)
