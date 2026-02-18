@@ -100,6 +100,11 @@ function AppRouter() {
           <CommissionsPage />
         </ProtectedRoute>
       } />
+      <Route path="/invite" element={
+        <ProtectedRoute minAccessLevel={4}>
+          <InvitePage />
+        </ProtectedRoute>
+      } />
 
       {/* Reseller/Leader Routes */}
       <Route path="/network" element={
