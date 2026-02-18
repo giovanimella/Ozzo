@@ -100,10 +100,25 @@ export default function ReportsPage() {
               <option value="quarter">Este Trimestre</option>
               <option value="year">Este Ano</option>
             </select>
-            <Button variant="secondary">
-              <Download className="w-4 h-4" />
-              Exportar
-            </Button>
+            
+            <div className="relative">
+              <select
+                onChange={(e) => {
+                  if (e.target.value) {
+                    window.open(`${API_URL}/api/export/${e.target.value}?format=csv`, '_blank');
+                    e.target.value = '';
+                  }
+                }}
+                className="h-10 px-4 bg-white border border-slate-200 rounded-lg appearance-none pr-10"
+                defaultValue=""
+              >
+                <option value="" disabled>Exportar...</option>
+                <option value="sales">Relatório de Vendas</option>
+                <option value="commissions">Relatório de Comissões</option>
+                <option value="users">Relatório de Usuários</option>
+              </select>
+              <Download className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+            </div>
           </div>
         </div>
 
