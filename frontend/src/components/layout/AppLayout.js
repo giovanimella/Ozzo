@@ -110,10 +110,7 @@ export default function AppLayout({ children, title, subtitle, showBack = false 
                 />
               </div>
 
-              <button className="relative p-2 rounded-xl text-slate-600 hover:bg-slate-100 transition-colors">
-                <Bell className="w-5 h-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-              </button>
+              <NotificationsDropdown />
             </div>
           </div>
         </header>
