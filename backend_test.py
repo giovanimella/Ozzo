@@ -323,7 +323,8 @@ class MLMAPITester:
         if self.failed_tests:
             print(f"\n❌ Failed Tests:")
             for test in self.failed_tests:
-                print(f"   • {test['name']}: {test.get('error', f\"Expected {test.get('expected')}, got {test.get('actual')}\"")}")
+                error_msg = test.get('error', f"Expected {test.get('expected')}, got {test.get('actual')}")
+                print(f"   • {test['name']}: {error_msg}")
         
         print(f"\n🔗 Base URL: {self.base_url}")
         print(f"🕒 Test completed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
