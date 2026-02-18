@@ -66,7 +66,7 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <AppLayout title="Page">
+      <AppLayout title="Configurações" subtitle="Configurações gerais do sistema">
         <div className="flex items-center justify-center h-64">
           <div className="w-8 h-8 border-4 border-primary-main border-t-transparent rounded-full spinner" />
         </div>
@@ -75,7 +75,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <AppLayout title="Page">
+    <AppLayout title="Configurações" subtitle="Configurações gerais do sistema">
       <div className="space-y-6 max-w-4xl">
         <div className="flex items-center justify-between">
           <div>
