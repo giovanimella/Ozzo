@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import { 
   Bell, X, Check, DollarSign, Users, ShoppingBag, 
   Clock, ChevronRight, Trash2, CheckCheck, Settings
 } from 'lucide-react';
-import { cn, formatDate } from '../../lib/utils';
-import { toast } from '../ui/toast';
+import { cn, formatDate } from '../lib/utils';
+import { toast } from './ui/toast';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
