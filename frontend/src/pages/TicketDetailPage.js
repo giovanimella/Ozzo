@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import DashboardLayout from '../components/layouts/DashboardLayout';
+import AppLayout from '../components/layout/AppLayout';
 import { ArrowLeft, Send, CheckCircle, Clock, AlertCircle, User } from 'lucide-react';
 
 export default function TicketDetailPage() {
