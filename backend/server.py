@@ -1354,6 +1354,21 @@ async def process_order_commissions(db, order, settings):
             sponsor = await db.users.find_one({"user_id": current_sponsor_id}, {"_id": 0})
             current_sponsor_id = sponsor.get("sponsor_id") if sponsor else None
     
+    # Send push notifications for each commission created
+    for comm in commissions_created:
+        try:
+            amount_str = f"R$ {comm['amount']:.2f}".replace('.', ',')
+            level_str = f"{comm['level']}º nível" if comm['level'] > 0 else "indicação direta"
+            await send_push_notification(
+                db,
+                comm["user_id"],
+                "Nova Comissão Recebida! 💰",
+                f"Você recebeu {amount_str} de comissão ({level_str}). O valor será liberado em 7 dias.",
+                {"url": "/commissions", "type": "commission", "amount": comm["amount"]}
+            )
+        except Exception as e:
+            logger.error(f"Error sending commission notification: {e}")
+    
     return commissions_created
 
 async def reverse_order_commissions(db, order_id: str):
