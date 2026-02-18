@@ -179,8 +179,8 @@ export default function TicketDetailPage() {
           </div>
         </div>
 
-        {/* Replies */}
-        <div className="space-y-4 mb-6">
+        {/* Replies Section */}
+        <div className="space-y-4">
           <h2 className="text-lg font-semibold text-gray-900">Respostas</h2>
           
           {ticket.replies && ticket.replies.length > 0 ? (
