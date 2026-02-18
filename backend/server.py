@@ -38,6 +38,9 @@ JWT_SECRET = os.environ.get("JWT_SECRET", "mlm_vanguard_secret_key")
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+# Scheduler
+scheduler = AsyncIOScheduler()
+
 # Access Levels
 ACCESS_LEVELS = {
     0: "admin_tecnico",
