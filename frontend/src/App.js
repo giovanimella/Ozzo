@@ -217,9 +217,11 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <ToastProvider>
-          <AppRouter />
-        </ToastProvider>
+        <WebSocketProvider>
+          <ToastProvider>
+            <AppRouter />
+          </ToastProvider>
+        </WebSocketProvider>
       </AuthProvider>
     </BrowserRouter>
   );
