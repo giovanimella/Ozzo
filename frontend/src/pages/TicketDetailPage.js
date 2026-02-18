@@ -94,36 +94,27 @@ export default function TicketDetailPage() {
 
   if (loading) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center min-h-screen">
+      <AppLayout title="Carregando..." subtitle="Aguarde">
+        <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-gray-500">Carregando ticket...</div>
         </div>
-      </DashboardLayout>
+      </AppLayout>
     );
   }
 
   if (!ticket) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center min-h-screen">
+      <AppLayout title="Não encontrado" subtitle="">
+        <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-gray-500">Ticket não encontrado</div>
         </div>
-      </DashboardLayout>
+      </AppLayout>
     );
   }
 
   return (
-    <DashboardLayout>
-      <div className="p-6 max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="mb-6">
-          <button
-            onClick={() => navigate('/support')}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Voltar para Tickets
-          </button>
+    <AppLayout title={`Ticket #${ticket_id.slice(-8)}`} subtitle={ticket.subject} showBack={true}>
+      <div className="max-w-4xl mx-auto space-y-6">
 
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <div className="flex items-start justify-between mb-4">
