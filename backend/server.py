@@ -3611,7 +3611,7 @@ async def get_conversation_messages(
     db = request.app.db
     
     # Check access
-    conversation = await db.conversations.find_one({"conversation_id": conversation_id})
+    conversation = await db.conversations.find_one({"conversation_id": conversation_id}, {"_id": 0})
     if not conversation:
         raise HTTPException(status_code=404, detail="Conversation not found")
     
@@ -3656,7 +3656,7 @@ async def send_message(
     db = request.app.db
     
     # Check access
-    conversation = await db.conversations.find_one({"conversation_id": conversation_id})
+    conversation = await db.conversations.find_one({"conversation_id": conversation_id}, {"_id": 0})
     if not conversation:
         raise HTTPException(status_code=404, detail="Conversation not found")
     
