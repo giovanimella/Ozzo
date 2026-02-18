@@ -188,204 +188,258 @@ export default function ChatPage() {
 
   return (
     <DashboardLayout>
-      <div className="flex h-[calc(100vh-4rem)]">
-        {/* Conversations Sidebar */}
-        <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
-          <div className="p-4 border-b border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">Conversas</h2>
-              <button
-                onClick={() => setShowNewChat(true)}
-                className="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
-                data-testid="new-chat-btn"
-              >
-                Nova Conversa
-              </button>
+      <div className="flex flex-col h-[calc(100vh-8rem)]">
+        {/* Header */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900" data-testid="chat-title">Chat</h1>
+              <p className="text-gray-600 mt-1">Converse em tempo real com sua equipe</p>
             </div>
-            <div className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`} />
-              <span className="text-sm text-gray-600">
-                {connected ? 'Conectado' : 'Desconectado'}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto">
-            {conversations.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">
-                <MessageSquare className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                <p>Nenhuma conversa ainda</p>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg border border-gray-200">
+                <div className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`} />
+                <span className="text-sm text-gray-700">
+                  {connected ? 'Conectado' : 'Desconectado'}
+                </span>
+              </div>
+              {!selectedConversation && !showNewChat && (
                 <button
                   onClick={() => setShowNewChat(true)}
-                  className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  data-testid="new-chat-btn"
                 >
-                  Iniciar Chat
+                  Nova Conversa
                 </button>
-              </div>
-            ) : (
-              conversations.map((conv) => (
-                <div
-                  key={conv.conversation_id}
-                  onClick={() => handleSelectConversation(conv)}
-                  className={`p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors ${
-                    selectedConversation?.conversation_id === conv.conversation_id ? 'bg-blue-50' : ''
-                  }`}
-                  data-testid={`conversation-${conv.conversation_id}`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold">
-                      {conv.other_user?.name?.charAt(0) || '?'}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <h3 className="font-semibold text-gray-900 truncate">
-                          {conv.other_user?.name || 'Usuário'}
-                        </h3>
-                        {conv.unread_count > 0 && (
-                          <span className="ml-2 px-2 py-0.5 bg-blue-600 text-white text-xs font-semibold rounded-full">
-                            {conv.unread_count}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-600 truncate">
-                        {conv.last_message || 'Nenhuma mensagem'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Chat Area */}
-        <div className="flex-1 flex flex-col bg-gray-50">
-          {selectedConversation ? (
-            <>
-              {/* Chat Header */}
-              <div className="bg-white border-b border-gray-200 p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold">
-                    {selectedConversation.other_user?.name?.charAt(0) || '?'}
-                  </div>
-                  <div>
-                    <h2 className="font-semibold text-gray-900">
-                      {selectedConversation.other_user?.name || 'Usuário'}
-                    </h2>
-                    <p className="text-sm text-gray-600">
-                      {selectedConversation.other_user?.email || ''}
-                    </p>
-                  </div>
-                </div>
+        {/* Chat Container */}
+        <div className="flex-1 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex">
+          {/* Conversations Sidebar */}
+          <div className="w-80 border-r border-gray-200 flex flex-col">
+            <div className="p-4 border-b border-gray-200 bg-gray-50">
+              <h2 className="text-lg font-semibold text-gray-900 mb-3">Conversas</h2>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Buscar conversas..."
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
               </div>
+            </div>
 
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {messages.map((msg) => {
-                  const isOwn = msg.sender_id === user.user_id;
-                  return (
-                    <div
-                      key={msg.message_id}
-                      className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div
-                        className={`max-w-md px-4 py-2 rounded-lg ${
-                          isOwn
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-white text-gray-900 border border-gray-200'
-                        }`}
-                      >
-                        <p className="whitespace-pre-wrap break-words">{msg.content}</p>
-                        <p className={`text-xs mt-1 ${isOwn ? 'text-blue-100' : 'text-gray-500'}`}>
-                          {new Date(msg.created_at).toLocaleTimeString('pt-BR', {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
+            <div className="flex-1 overflow-y-auto">
+              {conversations.length === 0 ? (
+                <div className="p-8 text-center text-gray-500">
+                  <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                  <p className="text-sm">Nenhuma conversa ainda</p>
+                </div>
+              ) : (
+                conversations.map((conv) => (
+                  <div
+                    key={conv.conversation_id}
+                    onClick={() => handleSelectConversation(conv)}
+                    className={`p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors ${
+                      selectedConversation?.conversation_id === conv.conversation_id ? 'bg-blue-50' : ''
+                    }`}
+                    data-testid={`conversation-${conv.conversation_id}`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="relative">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-lg flex-shrink-0">
+                          {conv.other_user?.name?.charAt(0) || '?'}
+                        </div>
+                        {conv.unread_count > 0 && (
+                          <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                            {conv.unread_count}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <h3 className="font-semibold text-gray-900 truncate">
+                            {conv.other_user?.name || 'Usuário'}
+                          </h3>
+                          <span className="text-xs text-gray-500">
+                            {conv.last_message_at && new Date(conv.last_message_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-600 truncate">
+                          {conv.last_message || 'Nenhuma mensagem'}
                         </p>
                       </div>
                     </div>
-                  );
-                })}
-                
-                {/* Typing Indicator */}
-                {typingUsers.size > 0 && (
-                  <div className="flex items-center gap-2 text-gray-500 text-sm">
-                    <Circle className="w-2 h-2 animate-pulse" />
-                    <span>Digitando...</span>
                   </div>
-                )}
-                
-                <div ref={messagesEndRef} />
-              </div>
+                ))
+              )}
+            </div>
+          </div>
 
-              {/* Message Input */}
-              <form onSubmit={handleSendMessage} className="bg-white border-t border-gray-200 p-4">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={messageText}
-                    onChange={(e) => {
-                      setMessageText(e.target.value);
-                      handleTyping();
-                    }}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Digite sua mensagem..."
-                    data-testid="message-input"
-                  />
-                  <button
-                    type="submit"
-                    disabled={!messageText.trim()}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
-                    data-testid="send-message-btn"
-                  >
-                    <Send className="w-5 h-5" />
-                  </button>
-                </div>
-              </form>
-            </>
-          ) : showNewChat ? (
-            <div className="flex-1 p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Iniciar Nova Conversa</h2>
-              
-              <div className="mb-4">
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="Buscar contato..."
-                />
-              </div>
-
-              <div className="space-y-2">
-                {filteredContacts.map((contact) => (
-                  <div
-                    key={contact.user_id}
-                    onClick={() => handleStartNewChat(contact.user_id)}
-                    className="p-4 bg-white rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors"
-                    data-testid={`contact-${contact.user_id}`}
-                  >
+          {/* Chat Area */}
+          <div className="flex-1 flex flex-col">
+            {selectedConversation ? (
+              <>
+                {/* Chat Header */}
+                <div className="p-4 border-b border-gray-200 bg-gray-50">
+                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold">
-                        {contact.name.charAt(0)}
+                        {selectedConversation.other_user?.name?.charAt(0) || '?'}
                       </div>
                       <div>
-                        <h3 className="font-semibold text-gray-900">{contact.name}</h3>
-                        <p className="text-sm text-gray-600">{contact.email}</p>
+                        <h2 className="font-semibold text-gray-900">
+                          {selectedConversation.other_user?.name || 'Usuário'}
+                        </h2>
+                        <p className="text-xs text-gray-600">
+                          {selectedConversation.other_user?.email || ''}
+                        </p>
                       </div>
                     </div>
+                    <div className="flex items-center gap-2">
+                      <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-lg transition-colors">
+                        <Phone className="w-5 h-5" />
+                      </button>
+                      <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-lg transition-colors">
+                        <Video className="w-5 h-5" />
+                      </button>
+                    </div>
                   </div>
-                ))}
+                </div>
+
+                {/* Messages */}
+                <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50">
+                  {messages.map((msg) => {
+                    const isOwn = msg.sender_id === user.user_id;
+                    return (
+                      <div
+                        key={msg.message_id}
+                        className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div
+                          className={`max-w-md px-4 py-3 rounded-2xl shadow-sm ${
+                            isOwn
+                              ? 'bg-blue-600 text-white rounded-br-none'
+                              : 'bg-white text-gray-900 border border-gray-200 rounded-bl-none'
+                          }`}
+                        >
+                          <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                          <p className={`text-xs mt-1 ${isOwn ? 'text-blue-100' : 'text-gray-500'}`}>
+                            {new Date(msg.created_at).toLocaleTimeString('pt-BR', {
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  
+                  {/* Typing Indicator */}
+                  {typingUsers.size > 0 && (
+                    <div className="flex items-center gap-2 text-gray-500 text-sm">
+                      <div className="flex gap-1">
+                        <Circle className="w-2 h-2 animate-pulse" />
+                        <Circle className="w-2 h-2 animate-pulse" style={{ animationDelay: '0.2s' }} />
+                        <Circle className="w-2 h-2 animate-pulse" style={{ animationDelay: '0.4s' }} />
+                      </div>
+                      <span>Digitando...</span>
+                    </div>
+                  )}
+                  
+                  <div ref={messagesEndRef} />
+                </div>
+
+                {/* Message Input */}
+                <form onSubmit={handleSendMessage} className="p-4 bg-white border-t border-gray-200">
+                  <div className="flex gap-3">
+                    <input
+                      type="text"
+                      value={messageText}
+                      onChange={(e) => {
+                        setMessageText(e.target.value);
+                        handleTyping();
+                      }}
+                      className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Digite sua mensagem..."
+                      data-testid="message-input"
+                    />
+                    <button
+                      type="submit"
+                      disabled={!messageText.trim()}
+                      className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+                      data-testid="send-message-btn"
+                    >
+                      <Send className="w-5 h-5" />
+                      <span className="hidden sm:inline">Enviar</span>
+                    </button>
+                  </div>
+                </form>
+              </>
+            ) : showNewChat ? (
+              <div className="flex-1 p-6 overflow-y-auto">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">Iniciar Nova Conversa</h2>
+                
+                <div className="mb-6">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Buscar contato..."
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  {filteredContacts.length === 0 ? (
+                    <div className="text-center py-12 text-gray-500">
+                      <User className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                      <p>Nenhum contato encontrado</p>
+                    </div>
+                  ) : (
+                    filteredContacts.map((contact) => (
+                      <div
+                        key={contact.user_id}
+                        onClick={() => handleStartNewChat(contact.user_id)}
+                        className="p-4 bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 cursor-pointer transition-all"
+                        data-testid={`contact-${contact.user_id}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-lg">
+                            {contact.name.charAt(0)}
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-gray-900">{contact.name}</h3>
+                            <p className="text-sm text-gray-600">{contact.email}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className="flex-1 flex items-center justify-center text-gray-500">
-              <div className="text-center">
-                <MessageSquare className="w-20 h-20 mx-auto mb-4 text-gray-300" />
-                <p className="text-lg">Selecione uma conversa para começar</p>
+            ) : (
+              <div className="flex-1 flex items-center justify-center text-gray-500 bg-gray-50">
+                <div className="text-center">
+                  <MessageSquare className="w-20 h-20 mx-auto mb-4 text-gray-300" />
+                  <p className="text-lg font-medium text-gray-700">Selecione uma conversa</p>
+                  <p className="text-sm text-gray-500 mt-1">Escolha um contato para começar a conversar</p>
+                  <button
+                    onClick={() => setShowNewChat(true)}
+                    className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Iniciar Conversa
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </DashboardLayout>
