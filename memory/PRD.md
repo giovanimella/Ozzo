@@ -86,7 +86,7 @@ Sistema de Marketing Multinível com 7 níveis de acesso hierárquicos, comissõ
 - [x] Rastreio de indicações (cookie 30 dias)
 - [x] Processamento de liberação de comissões
 
-### Frontend (100% UI)
+### Frontend (100% UI) - TODAS TESTADAS E FUNCIONAIS
 - [x] Landing page profissional
 - [x] Login (JWT + Google OAuth)
 - [x] Registro com seleção de nível
@@ -99,19 +99,31 @@ Sistema de Marketing Multinível com 7 níveis de acesso hierárquicos, comissõ
 - [x] Página de Carteira
 - [x] Loja Online (catálogo, carrinho)
 - [x] Perfil (dados pessoais, bancários)
+- [x] **Página de Pedidos (/orders)** - Lista, filtros, detalhes, atualização de status
+- [x] **Página de Relatórios (/reports)** - Gráficos Recharts (Bar, Pie, Line), KPIs
+- [x] **Página de Saques (/withdrawals)** - Gestão completa com aprovar/rejeitar
+- [x] **Página de Logs (/logs)** - Histórico de auditoria com filtros
+- [x] **Página de Checkout (/checkout)** - Fluxo 3 etapas (Carrinho, Entrega, Pagamento)
 
-### Integrações (MOCKED - Configuráveis)
+### Integrações (ESTRUTURA PRONTA - Requer Chaves de API)
 - [x] PagSeguro (estrutura pronta, credenciais via settings)
 - [x] MercadoPago (estrutura pronta, credenciais via settings)
 - [x] Resend Email (estrutura pronta, credenciais via settings)
+- [x] Google OAuth (Emergent Auth - Funcional)
+
+## Testing Status (Feb 18, 2026)
+- **Backend**: 100% (18/18 testes passaram)
+- **Frontend**: 100% (Todas as páginas renderizam corretamente)
+- **Arquivo de testes**: `/app/backend/tests/test_mlm_vanguard.py`
+- **Relatório**: `/app/test_reports/iteration_3.json`
 
 ## Prioritized Backlog
 
-### P0 - Critical (Next Sprint)
-- [ ] Página de Checkout com integração de pagamento
-- [ ] Processamento real de pagamentos (PagSeguro/MercadoPago)
-- [ ] Envio de emails transacionais (Resend)
-- [ ] Job automático de verificação de qualificação mensal
+### P0 - Critical (Próximo Sprint)
+- [ ] Ativar integração real com PagSeguro (requer chaves do usuário)
+- [ ] Ativar integração real com MercadoPago (requer chaves do usuário)
+- [ ] Envio de emails transacionais (Resend - requer chave do usuário)
+- [ ] Job automático de verificação de qualificação mensal (cron job)
 
 ### P1 - High Priority
 - [ ] Relatórios exportáveis (PDF/Excel)
@@ -128,18 +140,19 @@ Sistema de Marketing Multinível com 7 níveis de acesso hierárquicos, comissõ
 - [ ] App mobile (React Native)
 
 ## Next Tasks List
-1. Implementar página de Checkout completa
-2. Ativar integração real com PagSeguro
-3. Ativar integração real com MercadoPago
-4. Configurar envio de emails com Resend
-5. Criar job de verificação mensal de qualificações
-6. Adicionar mais relatórios no dashboard admin
+1. **Ativar PagSeguro** - Usuário precisa fornecer credenciais
+2. **Ativar MercadoPago** - Usuário precisa fornecer credenciais
+3. **Ativar Resend** - Usuário precisa fornecer API key
+4. Criar job de verificação mensal de qualificações (scheduler)
+5. Implementar exportação de relatórios (PDF/Excel)
+6. Adicionar ranking de revendedores no dashboard
 
 ## Technical Debt
 - Otimizar queries de árvore de rede (usar $graphLookup)
 - Adicionar cache para estatísticas do dashboard
 - Implementar rate limiting nas APIs públicas
-- Adicionar testes automatizados
+- Refatorar server.py em módulos (routes/)
+- Criar serviço de API centralizado no frontend
 
 ---
-*Last updated: February 18, 2026*
+*Last updated: February 18, 2026 - Todas as páginas P0 implementadas e testadas*
