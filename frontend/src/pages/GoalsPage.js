@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import DashboardLayout from '../components/layouts/DashboardLayout';
-import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import { Badge } from '../components/ui/Badge';
-import { Input, Select } from '../components/ui/Input';
+import AppLayout from '../components/layout/AppLayout';
+import { Input } from '../components/ui/Input';
 import { formatCurrency, formatDate } from '../lib/utils';
 import { toast } from '../components/ui/toast';
 import { 
