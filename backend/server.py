@@ -3138,6 +3138,292 @@ async def create_notification(db, user_id: str, title: str, body: str, notificat
     await db.notifications.insert_one(notification)
     return notification
 
+# ==================== SUPPORT TICKETS ====================
+
+class TicketCreate(BaseModel):
+    category: str  # Financeiro, Produto, Rede, Técnico, Outros
+    subject: str
+    description: str
+    priority: str = "normal"  # baixa, normal, alta, urgente
+
+class TicketReply(BaseModel):
+    message: str
+
+@app.post("/api/tickets")
+async def create_ticket(request: Request, data: TicketCreate, user: dict = Depends(get_current_user)):
+    """Create a new support ticket - All users can create tickets"""
+    db = request.app.db
+    
+    ticket = {
+        "ticket_id": generate_id("ticket_"),
+        "user_id": user["user_id"],
+        "user_name": user.get("name"),
+        "user_email": user.get("email"),
+        "category": data.category,
+        "subject": data.subject,
+        "description": data.description,
+        "priority": data.priority,
+        "status": "open",  # open, in_progress, resolved, closed
+        "assigned_to": None,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.tickets.insert_one(ticket)
+    
+    # Create notification for admins/supervisors
+    admins_and_supervisors = await db.users.find(
+        {"access_level": {"$in": [0, 1, 2]}, "status": "active"},
+        {"_id": 0, "user_id": 1}
+    ).to_list(100)
+    
+    for admin in admins_and_supervisors:
+        await create_notification(
+            db,
+            admin["user_id"],
+            "Novo Ticket de Suporte 🎫",
+            f"Novo ticket de {user.get('name')}: {data.subject}",
+            "ticket",
+            {"url": f"/support/{ticket['ticket_id']}", "ticket_id": ticket["ticket_id"]}
+        )
+    
+    await db.logs.insert_one({
+        "log_id": generate_id("log_"),
+        "action": "ticket_created",
+        "user_id": user["user_id"],
+        "details": {"ticket_id": ticket["ticket_id"], "subject": data.subject, "category": data.category},
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    ticket_response = await db.tickets.find_one({"ticket_id": ticket["ticket_id"]}, {"_id": 0})
+    return ticket_response
+
+@app.get("/api/tickets")
+async def list_tickets(
+    request: Request,
+    status: Optional[str] = None,
+    category: Optional[str] = None,
+    priority: Optional[str] = None,
+    page: int = 1,
+    limit: int = 20,
+    user: dict = Depends(get_current_user)
+):
+    """List tickets - Users see their own, admins/supervisors see all"""
+    db = request.app.db
+    
+    query = {}
+    
+    # Regular users only see their own tickets
+    if user.get("access_level") > 2:
+        query["user_id"] = user["user_id"]
+    
+    # Filters
+    if status:
+        query["status"] = status
+    if category:
+        query["category"] = category
+    if priority:
+        query["priority"] = priority
+    
+    total = await db.tickets.count_documents(query)
+    tickets = await db.tickets.find(query, {"_id": 0}).sort("created_at", -1).skip((page-1)*limit).limit(limit).to_list(limit)
+    
+    # Add reply count to each ticket
+    for ticket in tickets:
+        reply_count = await db.ticket_replies.count_documents({"ticket_id": ticket["ticket_id"]})
+        ticket["reply_count"] = reply_count
+    
+    return {
+        "tickets": tickets,
+        "total": total,
+        "page": page,
+        "pages": (total + limit - 1) // limit
+    }
+
+@app.get("/api/tickets/{ticket_id}")
+async def get_ticket(request: Request, ticket_id: str, user: dict = Depends(get_current_user)):
+    """Get ticket details with replies"""
+    db = request.app.db
+    
+    ticket = await db.tickets.find_one({"ticket_id": ticket_id}, {"_id": 0})
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    
+    # Check access - users can only see their own tickets, admins/supervisors can see all
+    if user.get("access_level") > 2 and ticket["user_id"] != user["user_id"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Get replies
+    replies = await db.ticket_replies.find(
+        {"ticket_id": ticket_id},
+        {"_id": 0}
+    ).sort("created_at", 1).to_list(100)
+    
+    # Enrich replies with user names
+    for reply in replies:
+        reply_user = await db.users.find_one({"user_id": reply["user_id"]}, {"_id": 0, "name": 1, "access_level": 1})
+        if reply_user:
+            reply["user_name"] = reply_user.get("name")
+            reply["user_access_level"] = reply_user.get("access_level")
+    
+    ticket["replies"] = replies
+    
+    return ticket
+
+@app.post("/api/tickets/{ticket_id}/reply")
+async def reply_to_ticket(request: Request, ticket_id: str, data: TicketReply, user: dict = Depends(get_current_user)):
+    """Reply to a ticket - Admins/Supervisors can reply, ticket owner can also reply"""
+    db = request.app.db
+    
+    ticket = await db.tickets.find_one({"ticket_id": ticket_id}, {"_id": 0})
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    
+    # Check permissions: admins/supervisors can reply, or the ticket owner
+    is_staff = user.get("access_level") <= 2
+    is_owner = ticket["user_id"] == user["user_id"]
+    
+    if not is_staff and not is_owner:
+        raise HTTPException(status_code=403, detail="You cannot reply to this ticket")
+    
+    reply = {
+        "reply_id": generate_id("reply_"),
+        "ticket_id": ticket_id,
+        "user_id": user["user_id"],
+        "message": data.message,
+        "is_staff": is_staff,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.ticket_replies.insert_one(reply)
+    
+    # Update ticket status and timestamp
+    update_data = {"updated_at": datetime.now(timezone.utc).isoformat()}
+    if is_staff and ticket["status"] == "open":
+        update_data["status"] = "in_progress"
+        update_data["assigned_to"] = user["user_id"]
+    
+    await db.tickets.update_one({"ticket_id": ticket_id}, {"$set": update_data})
+    
+    # Notify the other party
+    if is_staff:
+        # Staff replied, notify ticket owner
+        await create_notification(
+            db,
+            ticket["user_id"],
+            "Nova Resposta no seu Ticket 💬",
+            f"Sua solicitação '{ticket['subject']}' recebeu uma resposta!",
+            "ticket_reply",
+            {"url": f"/support/{ticket_id}", "ticket_id": ticket_id}
+        )
+        await send_push_notification(
+            db,
+            ticket["user_id"],
+            "Nova Resposta no seu Ticket 💬",
+            f"Sua solicitação '{ticket['subject']}' recebeu uma resposta!",
+            {"url": f"/support/{ticket_id}", "type": "ticket_reply"}
+        )
+    else:
+        # Ticket owner replied, notify staff
+        admins_and_supervisors = await db.users.find(
+            {"access_level": {"$in": [0, 1, 2]}, "status": "active"},
+            {"_id": 0, "user_id": 1}
+        ).to_list(100)
+        
+        for admin in admins_and_supervisors:
+            await create_notification(
+                db,
+                admin["user_id"],
+                "Nova Resposta em Ticket 💬",
+                f"{user.get('name')} respondeu ao ticket: {ticket['subject']}",
+                "ticket_reply",
+                {"url": f"/support/{ticket_id}", "ticket_id": ticket_id}
+            )
+    
+    await db.logs.insert_one({
+        "log_id": generate_id("log_"),
+        "action": "ticket_replied",
+        "user_id": user["user_id"],
+        "details": {"ticket_id": ticket_id},
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    reply_response = await db.ticket_replies.find_one({"reply_id": reply["reply_id"]}, {"_id": 0})
+    return reply_response
+
+@app.put("/api/tickets/{ticket_id}/status")
+async def update_ticket_status(
+    request: Request,
+    ticket_id: str,
+    status: str = Query(..., enum=["open", "in_progress", "resolved", "closed"]),
+    user: dict = Depends(get_current_user)
+):
+    """Update ticket status - Admins/Supervisors only"""
+    db = request.app.db
+    
+    # Only admins/supervisors can update status
+    if user.get("access_level") > 2:
+        raise HTTPException(status_code=403, detail="Only staff can update ticket status")
+    
+    ticket = await db.tickets.find_one({"ticket_id": ticket_id})
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    
+    await db.tickets.update_one(
+        {"ticket_id": ticket_id},
+        {"$set": {"status": status, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    # Notify ticket owner
+    await create_notification(
+        db,
+        ticket["user_id"],
+        "Status do Ticket Atualizado 📋",
+        f"Seu ticket '{ticket['subject']}' foi atualizado para: {status}",
+        "ticket_status",
+        {"url": f"/support/{ticket_id}", "ticket_id": ticket_id}
+    )
+    
+    await db.logs.insert_one({
+        "log_id": generate_id("log_"),
+        "action": "ticket_status_updated",
+        "user_id": user["user_id"],
+        "details": {"ticket_id": ticket_id, "new_status": status},
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    return {"message": "Ticket status updated"}
+
+@app.get("/api/tickets/stats/summary")
+async def get_tickets_summary(request: Request, user: dict = Depends(require_access_level(2))):
+    """Get tickets summary statistics - Admins/Supervisors only"""
+    db = request.app.db
+    
+    total_tickets = await db.tickets.count_documents({})
+    open_tickets = await db.tickets.count_documents({"status": "open"})
+    in_progress = await db.tickets.count_documents({"status": "in_progress"})
+    resolved = await db.tickets.count_documents({"status": "resolved"})
+    
+    # By category
+    by_category = {}
+    for category in ["Financeiro", "Produto", "Rede", "Técnico", "Outros"]:
+        count = await db.tickets.count_documents({"category": category})
+        by_category[category] = count
+    
+    # Recent tickets
+    recent = await db.tickets.find({}, {"_id": 0}).sort("created_at", -1).limit(5).to_list(5)
+    
+    return {
+        "total": total_tickets,
+        "by_status": {
+            "open": open_tickets,
+            "in_progress": in_progress,
+            "resolved": resolved
+        },
+        "by_category": by_category,
+        "recent_tickets": recent
+    }
+
 # ==================== HEALTH CHECK ====================
 
 @app.get("/api/health")
