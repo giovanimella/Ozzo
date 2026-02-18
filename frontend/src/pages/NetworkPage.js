@@ -1,47 +1,88 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import DashboardLayout from '../components/layouts/DashboardLayout';
-import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
+import AppLayout, { StatCard, DashCard } from '../components/layout/AppLayout';
 import { Badge } from '../components/ui/Badge';
+import { Button } from '../components/ui/Button';
 import { formatCurrency } from '../lib/utils';
 import { toast } from '../components/ui/toast';
-import { Users, ChevronRight, ChevronDown, User, TrendingUp } from 'lucide-react';
+import { 
+  Users, ChevronRight, ChevronDown, User, TrendingUp, 
+  UserPlus, Share2, Copy, RefreshCw, Search
+} from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { cn } from '../lib/utils';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 function NetworkNode({ node, level = 0 }) {
-  const [expanded, setExpanded] = useState(level < 1);
+  const [expanded, setExpanded] = useState(level < 2);
   const hasChildren = node.children && node.children.length > 0;
+
+  const levelColors = {
+    0: 'bg-gradient-to-r from-brand-main to-blue-600 text-white',
+    1: 'bg-emerald-50 border-emerald-200 hover:border-emerald-300',
+    2: 'bg-blue-50 border-blue-200 hover:border-blue-300',
+    3: 'bg-purple-50 border-purple-200 hover:border-purple-300',
+  };
+
+  const avatarColors = {
+    0: 'bg-white/20 text-white',
+    1: 'bg-emerald-500 text-white',
+    2: 'bg-blue-500 text-white',
+    3: 'bg-purple-500 text-white',
+  };
 
   return (
     <div className="relative">
       <div 
-        className={`flex items-center gap-3 p-3 rounded-lg transition-colors cursor-pointer
-          ${level === 0 ? 'bg-primary-main text-white' : 'bg-white border border-slate-200 hover:border-slate-300'}`}
-        onClick={() => setExpanded(!expanded)}
-        style={{ marginLeft: level * 24 }}
+        className={cn(
+          "flex items-center gap-3 p-3 rounded-xl transition-all cursor-pointer border active:scale-[0.99]",
+          level === 0 ? levelColors[0] : levelColors[Math.min(level, 3)] || 'bg-slate-50 border-slate-200'
+        )}
+        onClick={() => hasChildren && setExpanded(!expanded)}
+        style={{ marginLeft: Math.min(level, 4) * 16 }}
       >
-        {hasChildren && (
-          <span className="text-slate-400">
+        {hasChildren ? (
+          <span className={level === 0 ? 'text-white/70' : 'text-slate-400'}>
             {expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
           </span>
+        ) : (
+          <span className="w-4" />
         )}
-        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${level === 0 ? 'bg-white/20' : 'bg-primary-main text-white'}`}>
+        
+        <div className={cn(
+          "w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0",
+          avatarColors[Math.min(level, 3)] || 'bg-slate-400 text-white'
+        )}>
           {node.name?.charAt(0).toUpperCase() || 'U'}
         </div>
+        
         <div className="flex-1 min-w-0">
-          <p className={`font-medium truncate ${level === 0 ? 'text-white' : 'text-primary-main'}`}>
+          <p className={cn(
+            "font-medium truncate text-sm",
+            level === 0 ? 'text-white' : 'text-slate-800'
+          )}>
             {node.name}
           </p>
-          <p className={`text-xs truncate ${level === 0 ? 'text-slate-300' : 'text-slate-500'}`}>
+          <p className={cn(
+            "text-xs truncate",
+            level === 0 ? 'text-white/70' : 'text-slate-500'
+          )}>
             {node.email}
           </p>
         </div>
-        <div className="text-right">
-          <Badge variant={node.status === 'active' ? 'success' : 'warning'}>
+        
+        <div className="text-right flex-shrink-0">
+          <Badge 
+            variant={node.status === 'active' ? 'success' : 'warning'}
+            className="text-[10px] px-2 py-0.5"
+          >
             {node.status === 'active' ? 'Ativo' : 'Inativo'}
           </Badge>
-          <p className={`text-xs mt-1 ${level === 0 ? 'text-slate-300' : 'text-slate-500'}`}>
+          <p className={cn(
+            "text-[10px] mt-1",
+            level === 0 ? 'text-white/60' : 'text-slate-400'
+          )}>
             Nível {level + 1}
           </p>
         </div>
@@ -49,10 +90,9 @@ function NetworkNode({ node, level = 0 }) {
 
       {expanded && hasChildren && (
         <div className="mt-2 space-y-2 relative">
-          {/* Connector line */}
           <div 
-            className="absolute left-6 top-0 w-px bg-slate-200"
-            style={{ height: 'calc(100% - 20px)', marginLeft: level * 24 }}
+            className="absolute left-8 top-0 w-px bg-slate-200"
+            style={{ height: 'calc(100% - 12px)', marginLeft: Math.min(level, 4) * 16 }}
           />
           {node.children.map((child) => (
             <NetworkNode key={child.user_id} node={child} level={level + 1} />
@@ -64,16 +104,18 @@ function NetworkNode({ node, level = 0 }) {
 }
 
 export default function NetworkPage() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [tree, setTree] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     fetchNetworkData();
   }, []);
 
   const fetchNetworkData = async () => {
+    setLoading(true);
     try {
       const [treeRes, statsRes] = await Promise.all([
         fetch(`${API_URL}/api/network/tree`, {
@@ -100,143 +142,206 @@ export default function NetworkPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="w-8 h-8 border-4 border-primary-main border-t-transparent rounded-full spinner" />
-        </div>
-      </DashboardLayout>
-    );
-  }
+  const copyInviteLink = () => {
+    const link = `${window.location.origin}/register?sponsor=${user?.referral_code}`;
+    navigator.clipboard.writeText(link);
+    toast.success('Link copiado!');
+  };
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="font-heading font-bold text-2xl text-primary-main" data-testid="network-title">
-            Minha Rede
-          </h1>
-          <p className="text-slate-600">Visualize sua equipe e estrutura de rede</p>
+    <AppLayout title="Minha Rede">
+      <div className="space-y-4 lg:space-y-6">
+        {/* Quick Actions - Mobile */}
+        <div className="flex gap-2 lg:hidden">
+          <Link to="/invite" className="flex-1">
+            <Button variant="default" className="w-full gap-2">
+              <UserPlus className="w-4 h-4" />
+              Convidar
+            </Button>
+          </Link>
+          <Button variant="outline" onClick={copyInviteLink} className="gap-2">
+            <Share2 className="w-4 h-4" />
+          </Button>
+          <Button variant="outline" onClick={fetchNetworkData} disabled={loading}>
+            <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
+          </Button>
         </div>
 
-        {/* Stats */}
-        {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <Card>
-              <CardContent className="py-4 text-center">
-                <p className="text-3xl font-heading font-bold text-primary-main">
-                  {stats.total_network || 0}
-                </p>
-                <p className="text-sm text-slate-500">Total</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="py-4 text-center">
-                <p className="text-3xl font-heading font-bold text-emerald-600">
-                  {stats.level_1 || 0}
-                </p>
-                <p className="text-sm text-slate-500">1º Nível</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="py-4 text-center">
-                <p className="text-3xl font-heading font-bold text-blue-600">
-                  {stats.level_2 || 0}
-                </p>
-                <p className="text-sm text-slate-500">2º Nível</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="py-4 text-center">
-                <p className="text-3xl font-heading font-bold text-purple-600">
-                  {stats.level_3 || 0}
-                </p>
-                <p className="text-sm text-slate-500">3º Nível</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="py-4 text-center">
-                <p className="text-3xl font-heading font-bold text-accent-main">
-                  {stats.active_this_month || 0}
-                </p>
-                <p className="text-sm text-slate-500">Ativos</p>
-              </CardContent>
-            </Card>
+        {/* Header Actions - Desktop */}
+        <div className="hidden lg:flex items-center justify-between">
+          <div>
+            <p className="text-slate-500">Visualize e gerencie sua equipe</p>
           </div>
-        )}
+          <div className="flex gap-2">
+            <Link to="/invite">
+              <Button variant="default" className="gap-2">
+                <UserPlus className="w-4 h-4" />
+                Convidar Revendedor
+              </Button>
+            </Link>
+            <Button variant="outline" onClick={copyInviteLink} className="gap-2">
+              <Copy className="w-4 h-4" />
+              Copiar Link
+            </Button>
+          </div>
+        </div>
+
+        {/* Stats Grid - Horizontal scroll on mobile */}
+        <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 lg:mx-0 lg:px-0 lg:grid lg:grid-cols-5 lg:overflow-visible">
+          <StatCard
+            icon={Users}
+            label="Total"
+            value={stats?.total_network || 0}
+            color="blue"
+            compact
+            className="min-w-[140px] lg:min-w-0"
+          />
+          <StatCard
+            icon={User}
+            label="1º Nível"
+            value={stats?.level_1 || 0}
+            color="green"
+            compact
+            className="min-w-[140px] lg:min-w-0"
+          />
+          <StatCard
+            icon={User}
+            label="2º Nível"
+            value={stats?.level_2 || 0}
+            color="blue"
+            compact
+            className="min-w-[140px] lg:min-w-0"
+          />
+          <StatCard
+            icon={User}
+            label="3º Nível"
+            value={stats?.level_3 || 0}
+            color="purple"
+            compact
+            className="min-w-[140px] lg:min-w-0"
+          />
+          <StatCard
+            icon={TrendingUp}
+            label="Ativos"
+            value={stats?.active_this_month || 0}
+            color="green"
+            compact
+            className="min-w-[140px] lg:min-w-0"
+          />
+        </div>
+
+        {/* Search - Mobile */}
+        <div className="lg:hidden">
+          <div className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-xl">
+            <Search className="w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Buscar na rede..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1 bg-transparent border-none outline-none text-sm"
+            />
+          </div>
+        </div>
 
         {/* Tree */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              Estrutura da Rede
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {tree.length === 0 ? (
-              <div className="text-center py-12">
-                <Users className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                <p className="text-slate-500">Sua rede está vazia</p>
-                <p className="text-sm text-slate-400 mt-1">
-                  Compartilhe seu link de indicação para começar a construir sua equipe
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {tree.map((node) => (
-                  <NetworkNode key={node.user_id} node={node} />
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Commission levels explanation */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Como Funcionam as Comissões</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid md:grid-cols-3 gap-4">
-              <div className="p-4 bg-emerald-50 rounded-lg">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">1</span>
-                  </div>
-                  <span className="font-heading font-bold text-emerald-700">1º Nível - 10%</span>
-                </div>
-                <p className="text-sm text-slate-600">
-                  Comissão sobre vendas dos seus indicados diretos
-                </p>
-              </div>
-              <div className="p-4 bg-blue-50 rounded-lg">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">2</span>
-                  </div>
-                  <span className="font-heading font-bold text-blue-700">2º Nível - 5%</span>
-                </div>
-                <p className="text-sm text-slate-600">
-                  Comissão sobre vendas dos indicados dos seus indicados
-                </p>
-              </div>
-              <div className="p-4 bg-purple-50 rounded-lg">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">3</span>
-                  </div>
-                  <span className="font-heading font-bold text-purple-700">3º Nível - 5%</span>
-                </div>
-                <p className="text-sm text-slate-600">
-                  Comissão sobre vendas da terceira geração
-                </p>
+        <DashCard 
+          title="Estrutura da Rede" 
+          icon={Users}
+          action={
+            <div className="hidden lg:flex items-center gap-2">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-lg">
+                <Search className="w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Buscar..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="bg-transparent border-none outline-none text-sm w-32"
+                />
               </div>
             </div>
-          </CardContent>
-        </Card>
+          }
+        >
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <RefreshCw className="w-8 h-8 animate-spin text-brand-main" />
+            </div>
+          ) : tree.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
+                <Users className="w-8 h-8 text-slate-400" />
+              </div>
+              <p className="text-slate-600 font-medium">Sua rede está vazia</p>
+              <p className="text-sm text-slate-400 mt-1 mb-4">
+                Convide revendedores para começar a construir sua equipe
+              </p>
+              <Link to="/invite">
+                <Button className="gap-2">
+                  <UserPlus className="w-4 h-4" />
+                  Convidar Primeiro Revendedor
+                </Button>
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {tree.map((node) => (
+                <NetworkNode key={node.user_id} node={node} />
+              ))}
+            </div>
+          )}
+        </DashCard>
+
+        {/* Commission Levels - Cards */}
+        <DashCard title="Como Funcionam as Comissões" icon={TrendingUp}>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="p-4 bg-gradient-to-br from-emerald-50 to-emerald-100/50 rounded-xl border border-emerald-200">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                  <span className="text-white font-bold">1</span>
+                </div>
+                <div>
+                  <p className="font-bold text-emerald-700">1º Nível</p>
+                  <p className="text-2xl font-bold text-emerald-600">10%</p>
+                </div>
+              </div>
+              <p className="text-sm text-slate-600">
+                Comissão sobre vendas dos seus indicados diretos
+              </p>
+            </div>
+            
+            <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl border border-blue-200">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/30">
+                  <span className="text-white font-bold">2</span>
+                </div>
+                <div>
+                  <p className="font-bold text-blue-700">2º Nível</p>
+                  <p className="text-2xl font-bold text-blue-600">5%</p>
+                </div>
+              </div>
+              <p className="text-sm text-slate-600">
+                Comissão sobre vendas dos indicados dos seus indicados
+              </p>
+            </div>
+            
+            <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-xl border border-purple-200">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center shadow-lg shadow-purple-500/30">
+                  <span className="text-white font-bold">3</span>
+                </div>
+                <div>
+                  <p className="font-bold text-purple-700">3º Nível</p>
+                  <p className="text-2xl font-bold text-purple-600">5%</p>
+                </div>
+              </div>
+              <p className="text-sm text-slate-600">
+                Comissão sobre vendas da terceira geração
+              </p>
+            </div>
+          </div>
+        </DashCard>
       </div>
-    </DashboardLayout>
+    </AppLayout>
   );
 }
