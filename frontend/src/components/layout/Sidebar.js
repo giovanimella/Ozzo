@@ -5,7 +5,8 @@ import {
   LayoutDashboard, Users, ShoppingBag, Wallet, Settings, 
   Network, LogOut, Menu, X, Package, FileText, UserCircle, 
   BarChart3, ClipboardList, Trophy, Target, Link2, Store,
-  ChevronRight, Bell, TrendingUp, DollarSign, ChevronDown, FileSpreadsheet
+  ChevronRight, Bell, TrendingUp, DollarSign, ChevronDown, FileSpreadsheet,
+  MessageCircle, Headphones
 } from 'lucide-react';
 import { cn, formatCurrency } from '../../lib/utils';
 
