@@ -1611,6 +1611,880 @@ async def check_qualifications(request: Request, user: dict = Depends(require_ac
     
     return {"message": f"Suspended: {suspended_count}, Cancelled: {cancelled_count}"}
 
+# ==================== RANKING & LEADERBOARD ====================
+
+@app.get("/api/ranking/resellers")
+async def get_reseller_ranking(
+    request: Request,
+    period: str = Query("month", enum=["week", "month", "quarter", "year", "all"]),
+    metric: str = Query("sales", enum=["sales", "commissions", "network", "points"]),
+    limit: int = Query(10, ge=1, le=100),
+    user: dict = Depends(get_current_user)
+):
+    """Get reseller ranking by various metrics"""
+    db = request.app.db
+    
+    # Calculate date range
+    now = datetime.now(timezone.utc)
+    if period == "week":
+        start_date = (now - timedelta(days=7)).isoformat()
+    elif period == "month":
+        start_date = now.replace(day=1, hour=0, minute=0, second=0).isoformat()
+    elif period == "quarter":
+        quarter_month = ((now.month - 1) // 3) * 3 + 1
+        start_date = now.replace(month=quarter_month, day=1, hour=0, minute=0, second=0).isoformat()
+    elif period == "year":
+        start_date = now.replace(month=1, day=1, hour=0, minute=0, second=0).isoformat()
+    else:
+        start_date = None
+    
+    if metric == "sales":
+        # Ranking by sales volume
+        match_stage = {"referrer_id": {"$ne": None}, "payment_status": "paid"}
+        if start_date:
+            match_stage["created_at"] = {"$gte": start_date}
+        
+        pipeline = [
+            {"$match": match_stage},
+            {"$group": {
+                "_id": "$referrer_id",
+                "total_sales": {"$sum": "$total"},
+                "order_count": {"$sum": 1}
+            }},
+            {"$sort": {"total_sales": -1}},
+            {"$limit": limit}
+        ]
+        results = await db.orders.aggregate(pipeline).to_list(limit)
+        
+    elif metric == "commissions":
+        # Ranking by commissions earned
+        match_stage = {}
+        if start_date:
+            match_stage["created_at"] = {"$gte": start_date}
+        
+        pipeline = [
+            {"$match": match_stage},
+            {"$group": {
+                "_id": "$user_id",
+                "total_commissions": {"$sum": "$amount"},
+                "commission_count": {"$sum": 1}
+            }},
+            {"$sort": {"total_commissions": -1}},
+            {"$limit": limit}
+        ]
+        results = await db.commissions.aggregate(pipeline).to_list(limit)
+        
+    elif metric == "network":
+        # Ranking by network size
+        pipeline = [
+            {"$match": {"access_level": {"$in": [3, 4]}, "status": "active"}},
+            {"$lookup": {
+                "from": "users",
+                "localField": "user_id",
+                "foreignField": "sponsor_id",
+                "as": "direct_referrals"
+            }},
+            {"$addFields": {"network_size": {"$size": "$direct_referrals"}}},
+            {"$sort": {"network_size": -1}},
+            {"$limit": limit},
+            {"$project": {"_id": 0, "user_id": 1, "name": 1, "network_size": 1, "access_level": 1}}
+        ]
+        results = await db.users.aggregate(pipeline).to_list(limit)
+        
+        return {"ranking": results, "period": period, "metric": metric}
+    
+    else:  # points
+        # Ranking by points
+        results = await db.users.find(
+            {"access_level": {"$in": [3, 4]}, "status": "active"},
+            {"_id": 0, "user_id": 1, "name": 1, "points": 1, "access_level": 1}
+        ).sort("points", -1).limit(limit).to_list(limit)
+        
+        return {"ranking": results, "period": period, "metric": metric}
+    
+    # Enrich with user data for sales/commissions
+    enriched = []
+    for idx, item in enumerate(results):
+        user_data = await db.users.find_one(
+            {"user_id": item["_id"]},
+            {"_id": 0, "user_id": 1, "name": 1, "email": 1, "access_level": 1, "picture": 1}
+        )
+        if user_data:
+            enriched.append({
+                "rank": idx + 1,
+                **user_data,
+                **{k: v for k, v in item.items() if k != "_id"}
+            })
+    
+    return {"ranking": enriched, "period": period, "metric": metric}
+
+# ==================== GOALS & BONUSES ====================
+
+class GoalCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    metric: str  # sales, commissions, network, personal_volume
+    target_value: float
+    bonus_amount: float
+    bonus_type: str = "fixed"  # fixed, percentage
+    start_date: str
+    end_date: str
+    access_levels: List[int] = [3, 4]  # Who can participate
+    active: bool = True
+
+@app.post("/api/goals")
+async def create_goal(request: Request, data: GoalCreate, user: dict = Depends(require_access_level(1))):
+    """Create a new goal/target"""
+    db = request.app.db
+    
+    goal = {
+        "goal_id": generate_id("goal_"),
+        **data.model_dump(),
+        "created_by": user["user_id"],
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.goals.insert_one(goal)
+    
+    await db.logs.insert_one({
+        "log_id": generate_id("log_"),
+        "action": "goal_created",
+        "user_id": user["user_id"],
+        "details": {"goal_id": goal["goal_id"], "name": data.name},
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    goal_response = await db.goals.find_one({"goal_id": goal["goal_id"]}, {"_id": 0})
+    return goal_response
+
+@app.get("/api/goals")
+async def list_goals(
+    request: Request,
+    active_only: bool = True,
+    user: dict = Depends(get_current_user)
+):
+    """List goals available for the user"""
+    db = request.app.db
+    
+    query = {"access_levels": user.get("access_level")}
+    if active_only:
+        now = datetime.now(timezone.utc).isoformat()
+        query["active"] = True
+        query["end_date"] = {"$gte": now}
+    
+    goals = await db.goals.find(query, {"_id": 0}).to_list(100)
+    
+    # Calculate progress for each goal
+    for goal in goals:
+        progress = await calculate_goal_progress(db, user["user_id"], goal)
+        goal["progress"] = progress
+    
+    return {"goals": goals}
+
+@app.get("/api/goals/{goal_id}")
+async def get_goal(request: Request, goal_id: str, user: dict = Depends(get_current_user)):
+    """Get goal details with user progress"""
+    db = request.app.db
+    
+    goal = await db.goals.find_one({"goal_id": goal_id}, {"_id": 0})
+    if not goal:
+        raise HTTPException(status_code=404, detail="Goal not found")
+    
+    goal["progress"] = await calculate_goal_progress(db, user["user_id"], goal)
+    
+    return goal
+
+@app.put("/api/goals/{goal_id}")
+async def update_goal(request: Request, goal_id: str, data: GoalCreate, user: dict = Depends(require_access_level(1))):
+    """Update a goal"""
+    db = request.app.db
+    
+    existing = await db.goals.find_one({"goal_id": goal_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Goal not found")
+    
+    update_data = data.model_dump()
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    update_data["updated_by"] = user["user_id"]
+    
+    await db.goals.update_one({"goal_id": goal_id}, {"$set": update_data})
+    
+    updated = await db.goals.find_one({"goal_id": goal_id}, {"_id": 0})
+    return updated
+
+@app.delete("/api/goals/{goal_id}")
+async def delete_goal(request: Request, goal_id: str, user: dict = Depends(require_access_level(1))):
+    """Delete a goal"""
+    db = request.app.db
+    
+    result = await db.goals.delete_one({"goal_id": goal_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Goal not found")
+    
+    return {"message": "Goal deleted"}
+
+async def calculate_goal_progress(db, user_id: str, goal: dict) -> dict:
+    """Calculate user progress towards a goal"""
+    metric = goal.get("metric")
+    target = goal.get("target_value", 0)
+    start_date = goal.get("start_date")
+    end_date = goal.get("end_date")
+    
+    current_value = 0
+    
+    if metric == "sales":
+        result = await db.orders.aggregate([
+            {"$match": {
+                "referrer_id": user_id,
+                "payment_status": "paid",
+                "created_at": {"$gte": start_date, "$lte": end_date}
+            }},
+            {"$group": {"_id": None, "total": {"$sum": "$total"}}}
+        ]).to_list(1)
+        current_value = result[0]["total"] if result else 0
+        
+    elif metric == "commissions":
+        result = await db.commissions.aggregate([
+            {"$match": {
+                "user_id": user_id,
+                "created_at": {"$gte": start_date, "$lte": end_date}
+            }},
+            {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+        ]).to_list(1)
+        current_value = result[0]["total"] if result else 0
+        
+    elif metric == "network":
+        current_value = await db.users.count_documents({
+            "sponsor_id": user_id,
+            "access_level": {"$in": [3, 4]},
+            "created_at": {"$gte": start_date, "$lte": end_date}
+        })
+        
+    elif metric == "personal_volume":
+        user_data = await db.users.find_one({"user_id": user_id}, {"_id": 0})
+        current_value = user_data.get("personal_volume", 0) if user_data else 0
+    
+    percentage = min((current_value / target * 100) if target > 0 else 0, 100)
+    completed = current_value >= target
+    
+    return {
+        "current_value": current_value,
+        "target_value": target,
+        "percentage": round(percentage, 1),
+        "completed": completed,
+        "remaining": max(target - current_value, 0)
+    }
+
+@app.get("/api/goals/achievements/{user_id}")
+async def get_user_achievements(request: Request, user_id: str, user: dict = Depends(get_current_user)):
+    """Get all achievements/completed goals for a user"""
+    db = request.app.db
+    
+    # Check access
+    if user["user_id"] != user_id and user.get("access_level") > 2:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    achievements = await db.achievements.find(
+        {"user_id": user_id},
+        {"_id": 0}
+    ).sort("achieved_at", -1).to_list(100)
+    
+    return {"achievements": achievements}
+
+@app.post("/api/admin/process-goals")
+async def process_goal_achievements(request: Request, user: dict = Depends(require_access_level(0))):
+    """Process goal achievements and award bonuses"""
+    db = request.app.db
+    
+    now = datetime.now(timezone.utc)
+    now_str = now.isoformat()
+    
+    # Get active goals that ended
+    ended_goals = await db.goals.find({
+        "active": True,
+        "end_date": {"$lte": now_str}
+    }, {"_id": 0}).to_list(100)
+    
+    achievements_created = 0
+    bonuses_awarded = 0
+    
+    for goal in ended_goals:
+        # Get all eligible users
+        eligible_users = await db.users.find({
+            "access_level": {"$in": goal.get("access_levels", [3, 4])},
+            "status": "active"
+        }, {"_id": 0}).to_list(10000)
+        
+        for eligible_user in eligible_users:
+            # Check if already processed
+            existing = await db.achievements.find_one({
+                "goal_id": goal["goal_id"],
+                "user_id": eligible_user["user_id"]
+            })
+            
+            if existing:
+                continue
+            
+            # Calculate progress
+            progress = await calculate_goal_progress(db, eligible_user["user_id"], goal)
+            
+            if progress["completed"]:
+                # Create achievement
+                achievement = {
+                    "achievement_id": generate_id("ach_"),
+                    "goal_id": goal["goal_id"],
+                    "goal_name": goal["name"],
+                    "user_id": eligible_user["user_id"],
+                    "final_value": progress["current_value"],
+                    "target_value": progress["target_value"],
+                    "achieved_at": now_str
+                }
+                await db.achievements.insert_one(achievement)
+                achievements_created += 1
+                
+                # Award bonus
+                bonus_amount = goal.get("bonus_amount", 0)
+                if goal.get("bonus_type") == "percentage":
+                    bonus_amount = progress["current_value"] * (bonus_amount / 100)
+                
+                if bonus_amount > 0:
+                    await db.users.update_one(
+                        {"user_id": eligible_user["user_id"]},
+                        {
+                            "$inc": {"available_balance": bonus_amount, "points": int(bonus_amount)},
+                        }
+                    )
+                    
+                    await db.transactions.insert_one({
+                        "transaction_id": generate_id("tx_"),
+                        "user_id": eligible_user["user_id"],
+                        "type": "goal_bonus",
+                        "amount": bonus_amount,
+                        "reference_id": goal["goal_id"],
+                        "description": f"Bônus por meta: {goal['name']}",
+                        "created_at": now_str
+                    })
+                    bonuses_awarded += 1
+        
+        # Mark goal as processed
+        await db.goals.update_one(
+            {"goal_id": goal["goal_id"]},
+            {"$set": {"processed": True, "processed_at": now_str}}
+        )
+    
+    await db.logs.insert_one({
+        "log_id": generate_id("log_"),
+        "action": "goals_processed",
+        "user_id": user["user_id"],
+        "details": {"achievements": achievements_created, "bonuses": bonuses_awarded},
+        "created_at": now_str
+    })
+    
+    return {"achievements_created": achievements_created, "bonuses_awarded": bonuses_awarded}
+
+# ==================== REFERRAL LINKS & TRACKING ====================
+
+@app.get("/api/referral/link")
+async def get_referral_link(request: Request, user: dict = Depends(get_current_user)):
+    """Get user's referral link with stats"""
+    db = request.app.db
+    
+    base_url = request.headers.get("origin", "https://vanguard.com")
+    referral_code = user.get("referral_code")
+    
+    # Get referral stats
+    total_clicks = await db.referral_clicks.count_documents({"referral_code": referral_code})
+    
+    month_start = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0).isoformat()
+    monthly_clicks = await db.referral_clicks.count_documents({
+        "referral_code": referral_code,
+        "created_at": {"$gte": month_start}
+    })
+    
+    # Conversions (orders with this referral)
+    total_conversions = await db.orders.count_documents({
+        "referrer_id": user["user_id"],
+        "payment_status": "paid"
+    })
+    
+    monthly_conversions = await db.orders.count_documents({
+        "referrer_id": user["user_id"],
+        "payment_status": "paid",
+        "created_at": {"$gte": month_start}
+    })
+    
+    conversion_rate = (total_conversions / total_clicks * 100) if total_clicks > 0 else 0
+    
+    return {
+        "referral_code": referral_code,
+        "referral_link": f"{base_url}/store?ref={referral_code}",
+        "stats": {
+            "total_clicks": total_clicks,
+            "monthly_clicks": monthly_clicks,
+            "total_conversions": total_conversions,
+            "monthly_conversions": monthly_conversions,
+            "conversion_rate": round(conversion_rate, 2)
+        }
+    }
+
+@app.post("/api/referral/track")
+async def track_referral_click(request: Request):
+    """Track a referral link click (called from frontend)"""
+    db = request.app.db
+    body = await request.json()
+    
+    referral_code = body.get("referral_code")
+    if not referral_code:
+        raise HTTPException(status_code=400, detail="Referral code required")
+    
+    # Verify code exists
+    referrer = await db.users.find_one({"referral_code": referral_code})
+    if not referrer:
+        raise HTTPException(status_code=404, detail="Invalid referral code")
+    
+    # Record click
+    click = {
+        "click_id": generate_id("click_"),
+        "referral_code": referral_code,
+        "referrer_id": referrer["user_id"],
+        "ip_address": request.client.host if request.client else None,
+        "user_agent": request.headers.get("user-agent"),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.referral_clicks.insert_one(click)
+    
+    return {"tracked": True, "referrer_name": referrer.get("name")}
+
+@app.get("/api/referral/clicks")
+async def get_referral_clicks(
+    request: Request,
+    page: int = 1,
+    limit: int = 50,
+    user: dict = Depends(get_current_user)
+):
+    """Get referral click history"""
+    db = request.app.db
+    
+    query = {"referrer_id": user["user_id"]}
+    
+    total = await db.referral_clicks.count_documents(query)
+    clicks = await db.referral_clicks.find(query, {"_id": 0}).sort("created_at", -1).skip((page-1)*limit).limit(limit).to_list(limit)
+    
+    return {"clicks": clicks, "total": total, "page": page}
+
+# ==================== EXPORT REPORTS ====================
+
+@app.get("/api/export/sales")
+async def export_sales_report(
+    request: Request,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    format: str = Query("csv", enum=["csv", "json"]),
+    user: dict = Depends(require_access_level(1))
+):
+    """Export sales report"""
+    db = request.app.db
+    
+    query = {"payment_status": "paid"}
+    if start_date:
+        query["created_at"] = {"$gte": start_date}
+    if end_date:
+        query.setdefault("created_at", {})["$lte"] = end_date
+    
+    orders = await db.orders.find(query, {"_id": 0}).sort("created_at", -1).to_list(10000)
+    
+    if format == "json":
+        return {"orders": orders, "total_count": len(orders)}
+    
+    # CSV format
+    import io
+    output = io.StringIO()
+    
+    headers = ["order_id", "created_at", "user_id", "subtotal", "shipping", "total", "payment_status", "order_status", "referrer_id"]
+    output.write(",".join(headers) + "\n")
+    
+    for order in orders:
+        row = [str(order.get(h, "")) for h in headers]
+        output.write(",".join(row) + "\n")
+    
+    csv_content = output.getvalue()
+    
+    return Response(
+        content=csv_content,
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=sales_report_{datetime.now().strftime('%Y%m%d')}.csv"}
+    )
+
+@app.get("/api/export/commissions")
+async def export_commissions_report(
+    request: Request,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    format: str = Query("csv", enum=["csv", "json"]),
+    user: dict = Depends(require_access_level(1))
+):
+    """Export commissions report"""
+    db = request.app.db
+    
+    query = {}
+    if start_date:
+        query["created_at"] = {"$gte": start_date}
+    if end_date:
+        query.setdefault("created_at", {})["$lte"] = end_date
+    
+    commissions = await db.commissions.find(query, {"_id": 0}).sort("created_at", -1).to_list(10000)
+    
+    # Enrich with user names
+    for comm in commissions:
+        user_data = await db.users.find_one({"user_id": comm["user_id"]}, {"name": 1, "email": 1})
+        if user_data:
+            comm["user_name"] = user_data.get("name")
+            comm["user_email"] = user_data.get("email")
+    
+    if format == "json":
+        return {"commissions": commissions, "total_count": len(commissions)}
+    
+    import io
+    output = io.StringIO()
+    
+    headers = ["commission_id", "created_at", "user_id", "user_name", "user_email", "order_id", "level", "rate", "base_amount", "amount", "status"]
+    output.write(",".join(headers) + "\n")
+    
+    for comm in commissions:
+        row = [str(comm.get(h, "")) for h in headers]
+        output.write(",".join(row) + "\n")
+    
+    csv_content = output.getvalue()
+    
+    return Response(
+        content=csv_content,
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=commissions_report_{datetime.now().strftime('%Y%m%d')}.csv"}
+    )
+
+@app.get("/api/export/users")
+async def export_users_report(
+    request: Request,
+    access_level: Optional[int] = None,
+    status: Optional[str] = None,
+    format: str = Query("csv", enum=["csv", "json"]),
+    user: dict = Depends(require_access_level(1))
+):
+    """Export users report"""
+    db = request.app.db
+    
+    query = {}
+    if access_level is not None:
+        query["access_level"] = access_level
+    if status:
+        query["status"] = status
+    
+    users = await db.users.find(query, {"_id": 0, "password": 0}).to_list(10000)
+    
+    if format == "json":
+        return {"users": users, "total_count": len(users)}
+    
+    import io
+    output = io.StringIO()
+    
+    headers = ["user_id", "name", "email", "phone", "access_level", "status", "referral_code", "sponsor_id", "created_at", "personal_volume", "team_volume", "available_balance", "blocked_balance", "points"]
+    output.write(",".join(headers) + "\n")
+    
+    for u in users:
+        row = [str(u.get(h, "")) for h in headers]
+        output.write(",".join(row) + "\n")
+    
+    csv_content = output.getvalue()
+    
+    return Response(
+        content=csv_content,
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=users_report_{datetime.now().strftime('%Y%m%d')}.csv"}
+    )
+
+@app.get("/api/export/network/{user_id}")
+async def export_network_report(
+    request: Request,
+    user_id: str,
+    format: str = Query("csv", enum=["csv", "json"]),
+    user: dict = Depends(get_current_user)
+):
+    """Export network/downline report for a user"""
+    db = request.app.db
+    
+    # Check access
+    if user["user_id"] != user_id and user.get("access_level") > 2:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Get all downline (3 levels)
+    async def get_downline(sponsor_id: str, level: int = 1, max_level: int = 3):
+        if level > max_level:
+            return []
+        
+        direct = await db.users.find(
+            {"sponsor_id": sponsor_id, "access_level": {"$in": [3, 4]}},
+            {"_id": 0, "password": 0}
+        ).to_list(1000)
+        
+        result = []
+        for d in direct:
+            d["network_level"] = level
+            result.append(d)
+            result.extend(await get_downline(d["user_id"], level + 1, max_level))
+        
+        return result
+    
+    network = await get_downline(user_id)
+    
+    if format == "json":
+        return {"network": network, "total_count": len(network)}
+    
+    import io
+    output = io.StringIO()
+    
+    headers = ["network_level", "user_id", "name", "email", "access_level", "status", "personal_volume", "team_volume", "created_at"]
+    output.write(",".join(headers) + "\n")
+    
+    for n in network:
+        row = [str(n.get(h, "")) for h in headers]
+        output.write(",".join(row) + "\n")
+    
+    csv_content = output.getvalue()
+    
+    return Response(
+        content=csv_content,
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=network_report_{datetime.now().strftime('%Y%m%d')}.csv"}
+    )
+
+# ==================== DASHBOARD PER ACCESS LEVEL ====================
+
+@app.get("/api/dashboard/supervisor")
+async def supervisor_dashboard(request: Request, user: dict = Depends(require_access_level(2))):
+    """Dashboard for Supervisor (Level 2)"""
+    db = request.app.db
+    
+    # Get assigned resellers or all if none assigned
+    assigned_ids = user.get("assigned_resellers", [])
+    reseller_query = {"access_level": 4}
+    if assigned_ids:
+        reseller_query["user_id"] = {"$in": assigned_ids}
+    
+    # Reseller stats
+    total_resellers = await db.users.count_documents(reseller_query)
+    active_resellers = await db.users.count_documents({**reseller_query, "status": "active"})
+    suspended_resellers = await db.users.count_documents({**reseller_query, "status": "suspended"})
+    
+    # This month orders from resellers
+    month_start = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0).isoformat()
+    
+    if assigned_ids:
+        orders_query = {"referrer_id": {"$in": assigned_ids}, "created_at": {"$gte": month_start}, "payment_status": "paid"}
+    else:
+        orders_query = {"created_at": {"$gte": month_start}, "payment_status": "paid"}
+    
+    orders_this_month = await db.orders.aggregate([
+        {"$match": orders_query},
+        {"$group": {"_id": None, "total": {"$sum": "$total"}, "count": {"$sum": 1}}}
+    ]).to_list(1)
+    
+    # Top performing resellers
+    top_resellers = await db.orders.aggregate([
+        {"$match": {**orders_query, "referrer_id": {"$ne": None}}},
+        {"$group": {"_id": "$referrer_id", "total_sales": {"$sum": "$total"}}},
+        {"$sort": {"total_sales": -1}},
+        {"$limit": 5}
+    ]).to_list(5)
+    
+    for tr in top_resellers:
+        user_data = await db.users.find_one({"user_id": tr["_id"]}, {"_id": 0, "name": 1, "email": 1})
+        if user_data:
+            tr["name"] = user_data.get("name")
+            tr["email"] = user_data.get("email")
+    
+    # Recent activity
+    recent_orders = await db.orders.find(
+        orders_query,
+        {"_id": 0}
+    ).sort("created_at", -1).limit(5).to_list(5)
+    
+    return {
+        "resellers": {
+            "total": total_resellers,
+            "active": active_resellers,
+            "suspended": suspended_resellers
+        },
+        "orders_this_month": {
+            "total": orders_this_month[0]["total"] if orders_this_month else 0,
+            "count": orders_this_month[0]["count"] if orders_this_month else 0
+        },
+        "top_resellers": top_resellers,
+        "recent_orders": recent_orders
+    }
+
+@app.get("/api/dashboard/leader")
+async def leader_dashboard(request: Request, user: dict = Depends(get_current_user)):
+    """Dashboard for Team Leader (Level 3)"""
+    db = request.app.db
+    user_id = user["user_id"]
+    
+    if user.get("access_level") > 3:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Team stats (direct + indirect)
+    direct_count = await db.users.count_documents({"sponsor_id": user_id, "access_level": {"$in": [3, 4]}})
+    
+    # Get indirect (level 2 and 3)
+    direct_ids = [u["user_id"] for u in await db.users.find({"sponsor_id": user_id}, {"user_id": 1}).to_list(100)]
+    level_2_count = await db.users.count_documents({"sponsor_id": {"$in": direct_ids}, "access_level": {"$in": [3, 4]}}) if direct_ids else 0
+    
+    level_2_ids = [u["user_id"] for u in await db.users.find({"sponsor_id": {"$in": direct_ids}}, {"user_id": 1}).to_list(100)] if direct_ids else []
+    level_3_count = await db.users.count_documents({"sponsor_id": {"$in": level_2_ids}, "access_level": {"$in": [3, 4]}}) if level_2_ids else 0
+    
+    # Team sales this month
+    month_start = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0).isoformat()
+    all_team_ids = [user_id] + direct_ids + level_2_ids
+    
+    team_sales = await db.orders.aggregate([
+        {"$match": {"referrer_id": {"$in": all_team_ids}, "created_at": {"$gte": month_start}, "payment_status": "paid"}},
+        {"$group": {"_id": None, "total": {"$sum": "$total"}, "count": {"$sum": 1}}}
+    ]).to_list(1)
+    
+    # My commissions
+    my_commissions = await db.commissions.aggregate([
+        {"$match": {"user_id": user_id, "created_at": {"$gte": month_start}}},
+        {"$group": {"_id": "$status", "total": {"$sum": "$amount"}}}
+    ]).to_list(10)
+    
+    commissions_by_status = {c["_id"]: c["total"] for c in my_commissions}
+    
+    # Top team members
+    top_team = await db.orders.aggregate([
+        {"$match": {"referrer_id": {"$in": direct_ids}, "created_at": {"$gte": month_start}, "payment_status": "paid"}},
+        {"$group": {"_id": "$referrer_id", "total_sales": {"$sum": "$total"}}},
+        {"$sort": {"total_sales": -1}},
+        {"$limit": 5}
+    ]).to_list(5)
+    
+    for tt in top_team:
+        user_data = await db.users.find_one({"user_id": tt["_id"]}, {"_id": 0, "name": 1})
+        if user_data:
+            tt["name"] = user_data.get("name")
+    
+    return {
+        "team": {
+            "level_1": direct_count,
+            "level_2": level_2_count,
+            "level_3": level_3_count,
+            "total": direct_count + level_2_count + level_3_count
+        },
+        "team_sales": {
+            "total": team_sales[0]["total"] if team_sales else 0,
+            "count": team_sales[0]["count"] if team_sales else 0
+        },
+        "commissions": {
+            "available": commissions_by_status.get("available", 0),
+            "blocked": commissions_by_status.get("blocked", 0)
+        },
+        "top_team": top_team,
+        "available_balance": user.get("available_balance", 0),
+        "blocked_balance": user.get("blocked_balance", 0),
+        "referral_code": user.get("referral_code")
+    }
+
+@app.get("/api/dashboard/client")
+async def client_dashboard(request: Request, user: dict = Depends(get_current_user)):
+    """Dashboard for Client (Level 5) and Ambassador (Level 6)"""
+    db = request.app.db
+    user_id = user["user_id"]
+    
+    # My orders
+    orders_count = await db.orders.count_documents({"user_id": user_id})
+    orders_total = await db.orders.aggregate([
+        {"$match": {"user_id": user_id, "payment_status": "paid"}},
+        {"$group": {"_id": None, "total": {"$sum": "$total"}}}
+    ]).to_list(1)
+    
+    # Recent orders
+    recent_orders = await db.orders.find(
+        {"user_id": user_id},
+        {"_id": 0}
+    ).sort("created_at", -1).limit(5).to_list(5)
+    
+    # Referral stats (if client has any)
+    referral_sales = await db.orders.aggregate([
+        {"$match": {"referrer_id": user_id, "payment_status": "paid"}},
+        {"$group": {"_id": None, "total": {"$sum": "$total"}, "count": {"$sum": 1}}}
+    ]).to_list(1)
+    
+    # Commissions earned
+    commissions = await db.commissions.aggregate([
+        {"$match": {"user_id": user_id}},
+        {"$group": {"_id": "$status", "total": {"$sum": "$amount"}}}
+    ]).to_list(10)
+    
+    commissions_by_status = {c["_id"]: c["total"] for c in commissions}
+    
+    return {
+        "orders": {
+            "count": orders_count,
+            "total_spent": orders_total[0]["total"] if orders_total else 0
+        },
+        "recent_orders": recent_orders,
+        "referrals": {
+            "sales": referral_sales[0]["total"] if referral_sales else 0,
+            "count": referral_sales[0]["count"] if referral_sales else 0
+        },
+        "commissions": {
+            "available": commissions_by_status.get("available", 0),
+            "blocked": commissions_by_status.get("blocked", 0)
+        },
+        "available_balance": user.get("available_balance", 0),
+        "referral_code": user.get("referral_code")
+    }
+
+# ==================== SCHEDULER STATUS ====================
+
+@app.get("/api/admin/scheduler-status")
+async def get_scheduler_status(request: Request, user: dict = Depends(require_access_level(0))):
+    """Get status of scheduled jobs"""
+    db = request.app.db
+    
+    # Get last run times from logs
+    last_qualification = await db.logs.find_one(
+        {"action": "qualifications_checked"},
+        {"_id": 0}
+    )
+    
+    last_commission_release = await db.logs.find_one(
+        {"action": "commissions_released"},
+        {"_id": 0}
+    )
+    
+    last_goals_process = await db.logs.find_one(
+        {"action": "goals_processed"},
+        {"_id": 0}
+    )
+    
+    # Pending items
+    pending_commissions = await db.commissions.count_documents({"status": "blocked"})
+    pending_withdrawals = await db.withdrawals.count_documents({"status": "pending"})
+    active_goals = await db.goals.count_documents({"active": True, "processed": {"$ne": True}})
+    
+    return {
+        "last_runs": {
+            "qualification_check": last_qualification.get("created_at") if last_qualification else None,
+            "commission_release": last_commission_release.get("created_at") if last_commission_release else None,
+            "goals_processing": last_goals_process.get("created_at") if last_goals_process else None
+        },
+        "pending": {
+            "commissions_to_release": pending_commissions,
+            "withdrawals_to_process": pending_withdrawals,
+            "goals_to_process": active_goals
+        }
+    }
+
 # ==================== HEALTH CHECK ====================
 
 @app.get("/api/health")
