@@ -85,6 +85,11 @@ Sistema de Marketing Multinível com 7 níveis de acesso hierárquicos, comissõ
 - [x] Sistema de logs de auditoria
 - [x] Rastreio de indicações (cookie 30 dias)
 - [x] Processamento de liberação de comissões
+- [x] **Ranking de Revendedores** - 4 métricas (vendas, comissões, rede, pontos), 5 períodos
+- [x] **Sistema de Metas e Bonificações** - CRUD completo com cálculo de progresso
+- [x] **Links de Indicação com Tracking** - Geração de links, rastreamento de cliques, estatísticas
+- [x] **Exportação de Relatórios** - CSV/JSON para vendas, comissões, usuários, rede
+- [x] **Dashboards por Nível de Acesso** - Supervisor, Líder, Cliente
 
 ### Frontend (100% UI) - TODAS TESTADAS E FUNCIONAIS
 - [x] Landing page profissional
@@ -100,10 +105,13 @@ Sistema de Marketing Multinível com 7 níveis de acesso hierárquicos, comissõ
 - [x] Loja Online (catálogo, carrinho)
 - [x] Perfil (dados pessoais, bancários)
 - [x] **Página de Pedidos (/orders)** - Lista, filtros, detalhes, atualização de status
-- [x] **Página de Relatórios (/reports)** - Gráficos Recharts (Bar, Pie, Line), KPIs
+- [x] **Página de Relatórios (/reports)** - Gráficos Recharts + Exportação CSV/JSON
 - [x] **Página de Saques (/withdrawals)** - Gestão completa com aprovar/rejeitar
 - [x] **Página de Logs (/logs)** - Histórico de auditoria com filtros
 - [x] **Página de Checkout (/checkout)** - Fluxo 3 etapas (Carrinho, Entrega, Pagamento)
+- [x] **Página de Ranking (/ranking)** - Ranking com pódio, filtros por período/métrica
+- [x] **Página de Metas (/goals)** - CRUD de metas, progresso visual, conquistas
+- [x] **Página de Links de Indicação (/referral-links)** - Link, código, estatísticas, dicas
 
 ### Integrações (ESTRUTURA PRONTA - Requer Chaves de API)
 - [x] PagSeguro (estrutura pronta, credenciais via settings)
@@ -112,10 +120,14 @@ Sistema de Marketing Multinível com 7 níveis de acesso hierárquicos, comissõ
 - [x] Google OAuth (Emergent Auth - Funcional)
 
 ## Testing Status (Feb 18, 2026)
-- **Backend**: 100% (18/18 testes passaram)
+- **Backend**: 100% (33/33 testes passaram) - Ranking, Metas, Referral Links, Export
 - **Frontend**: 100% (Todas as páginas renderizam corretamente)
-- **Arquivo de testes**: `/app/backend/tests/test_mlm_vanguard.py`
-- **Relatório**: `/app/test_reports/iteration_3.json`
+- **Arquivos de testes**: 
+  - `/app/backend/tests/test_mlm_vanguard.py`
+  - `/app/backend/tests/test_new_features.py`
+- **Relatórios**: 
+  - `/app/test_reports/iteration_3.json`
+  - `/app/test_reports/iteration_4.json`
 
 ## Prioritized Backlog
 
@@ -126,8 +138,8 @@ Sistema de Marketing Multinível com 7 níveis de acesso hierárquicos, comissõ
 - [ ] Job automático de verificação de qualificação mensal (cron job)
 
 ### P1 - High Priority
-- [ ] Relatórios exportáveis (PDF/Excel)
-- [ ] Ranking de revendedores
+- [x] ~~Relatórios exportáveis (PDF/Excel)~~ - CSV/JSON implementado
+- [x] ~~Ranking de revendedores~~ - Implementado com 4 métricas
 - [ ] Sistema de metas e bonificações
 - [ ] Notificações push/email
 - [ ] Histórico detalhado de comissões
