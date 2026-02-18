@@ -17,6 +17,8 @@ const getMenuItems = (accessLevel) => {
   if (accessLevel <= 1) {
     items.push({ section: 'Principal' });
     items.push({ icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' });
+    items.push({ icon: MessageCircle, label: 'Chat', path: '/chat' });
+    items.push({ icon: Headphones, label: 'Suporte', path: '/support' });
     items.push({ icon: Users, label: 'Usuários', path: '/users' });
     items.push({ icon: ClipboardList, label: 'Pedidos', path: '/orders' });
     items.push({ section: 'Análises' });
@@ -41,6 +43,8 @@ const getMenuItems = (accessLevel) => {
   if (accessLevel === 2) {
     items.push({ section: 'Principal' });
     items.push({ icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' });
+    items.push({ icon: MessageCircle, label: 'Chat', path: '/chat' });
+    items.push({ icon: Headphones, label: 'Suporte', path: '/support' });
     items.push({ icon: Users, label: 'Minha Carteira', path: '/my-portfolio' });
     items.push({ icon: Trophy, label: 'Ranking', path: '/ranking' });
   }
@@ -49,6 +53,8 @@ const getMenuItems = (accessLevel) => {
   if (accessLevel === 3 || accessLevel === 4) {
     items.push({ section: 'Principal' });
     items.push({ icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' });
+    items.push({ icon: MessageCircle, label: 'Chat', path: '/chat' });
+    items.push({ icon: Headphones, label: 'Suporte', path: '/support' });
     items.push({ icon: Network, label: 'Minha Rede', path: '/network' });
     items.push({ section: 'Performance' });
     items.push({ icon: Trophy, label: 'Ranking', path: '/ranking' });
@@ -64,6 +70,8 @@ const getMenuItems = (accessLevel) => {
   if (accessLevel === 5 || accessLevel === 6) {
     items.push({ section: 'Principal' });
     items.push({ icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' });
+    items.push({ icon: MessageCircle, label: 'Chat', path: '/chat' });
+    items.push({ icon: Headphones, label: 'Suporte', path: '/support' });
     items.push({ icon: ShoppingBag, label: 'Meus Pedidos', path: '/my-orders' });
     items.push({ section: 'Indicação' });
     items.push({ icon: Link2, label: 'Meu Link', path: '/referral-links' });
