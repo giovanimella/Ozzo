@@ -118,64 +118,63 @@ export default function TicketDetailPage() {
 
         {/* Ticket Details Card */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex-1">
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">{ticket.subject}</h1>
-                <div className="flex items-center gap-3 flex-wrap">
-                  <span className={`px-3 py-1 text-sm font-medium rounded-full border ${getStatusColor(ticket.status)}`}>
-                    {getStatusLabel(ticket.status)}
-                  </span>
-                  <span className="px-3 py-1 text-sm font-medium rounded-full bg-gray-100 text-gray-700">
-                    {ticket.category}
-                  </span>
-                  <span className="px-3 py-1 text-sm font-medium rounded-full bg-purple-100 text-purple-700">
-                    {ticket.priority}
-                  </span>
-                </div>
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex-1">
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">{ticket.subject}</h1>
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className={`px-3 py-1 text-sm font-medium rounded-full border ${getStatusColor(ticket.status)}`}>
+                  {getStatusLabel(ticket.status)}
+                </span>
+                <span className="px-3 py-1 text-sm font-medium rounded-full bg-gray-100 text-gray-700">
+                  {ticket.category}
+                </span>
+                <span className="px-3 py-1 text-sm font-medium rounded-full bg-purple-100 text-purple-700">
+                  {ticket.priority}
+                </span>
               </div>
-
-              {/* Status Actions for Staff */}
-              {isStaff && ticket.status !== 'closed' && (
-                <div className="flex gap-2">
-                  {ticket.status === 'open' && (
-                    <button
-                      onClick={() => handleUpdateStatus('in_progress')}
-                      className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200"
-                    >
-                      Em Andamento
-                    </button>
-                  )}
-                  {ticket.status === 'in_progress' && (
-                    <button
-                      onClick={() => handleUpdateStatus('resolved')}
-                      className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200"
-                    >
-                      Resolver
-                    </button>
-                  )}
-                  {ticket.status === 'resolved' && (
-                    <button
-                      onClick={() => handleUpdateStatus('closed')}
-                      className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
-                    >
-                      Fechar
-                    </button>
-                  )}
-                </div>
-              )}
             </div>
 
-            <div className="space-y-2 text-sm text-gray-600">
-              <p><strong>Criado por:</strong> {ticket.user_name} ({ticket.user_email})</p>
-              <p><strong>Data:</strong> {new Date(ticket.created_at).toLocaleString('pt-BR')}</p>
-              {ticket.updated_at && (
-                <p><strong>Última atualização:</strong> {new Date(ticket.updated_at).toLocaleString('pt-BR')}</p>
-              )}
-            </div>
+            {/* Status Actions for Staff */}
+            {isStaff && ticket.status !== 'closed' && (
+              <div className="flex gap-2">
+                {ticket.status === 'open' && (
+                  <button
+                    onClick={() => handleUpdateStatus('in_progress')}
+                    className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200"
+                  >
+                    Em Andamento
+                  </button>
+                )}
+                {ticket.status === 'in_progress' && (
+                  <button
+                    onClick={() => handleUpdateStatus('resolved')}
+                    className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200"
+                  >
+                    Resolver
+                  </button>
+                )}
+                {ticket.status === 'resolved' && (
+                  <button
+                    onClick={() => handleUpdateStatus('closed')}
+                    className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                  >
+                    Fechar
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
 
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <p className="text-gray-700 whitespace-pre-wrap">{ticket.description}</p>
-            </div>
+          <div className="space-y-2 text-sm text-gray-600">
+            <p><strong>Criado por:</strong> {ticket.user_name} ({ticket.user_email})</p>
+            <p><strong>Data:</strong> {new Date(ticket.created_at).toLocaleString('pt-BR')}</p>
+            {ticket.updated_at && (
+              <p><strong>Última atualização:</strong> {new Date(ticket.updated_at).toLocaleString('pt-BR')}</p>
+            )}
+          </div>
+
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <p className="text-gray-700 whitespace-pre-wrap">{ticket.description}</p>
           </div>
         </div>
 
