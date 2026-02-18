@@ -175,7 +175,7 @@ export default function ProductsPage() {
   };
 
   return (
-    <AppLayout title="Page">
+    <AppLayout title="Produtos" subtitle="Gerencie os produtos da loja">
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>

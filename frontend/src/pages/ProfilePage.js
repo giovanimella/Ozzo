@@ -67,7 +67,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <AppLayout title="Page">
+    <AppLayout title="Meu Perfil" subtitle="Gerencie suas informações pessoais">
       <div className="space-y-6 max-w-4xl">
         <div className="flex items-center justify-between">
           <div>

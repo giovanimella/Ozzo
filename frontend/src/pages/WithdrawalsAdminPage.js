@@ -94,7 +94,7 @@ export default function WithdrawalsAdminPage() {
   };
 
   return (
-    <AppLayout title="Page">
+    <AppLayout title="Saques" subtitle="Gerencie solicitações de saque">
       <div className="space-y-6">
         <div>
           <h1 className="font-heading font-bold text-2xl text-primary-main" data-testid="withdrawals-admin-title">

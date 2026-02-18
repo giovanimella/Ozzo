@@ -106,7 +106,7 @@ export default function LogsPage() {
   ];
 
   return (
-    <AppLayout title="Page">
+    <AppLayout title="Logs do Sistema" subtitle="Histórico de ações e eventos">
       <div className="space-y-6">
         <div>
           <h1 className="font-heading font-bold text-2xl text-primary-main" data-testid="logs-title">

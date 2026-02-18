@@ -115,7 +115,7 @@ export default function WalletPage() {
   };
 
   return (
-    <AppLayout title="Page">
+    <AppLayout title="Minha Carteira" subtitle="Acompanhe seu saldo e movimentações">
       <div className="space-y-6">
         <div>
           <h1 className="font-heading font-bold text-2xl text-primary-main" data-testid="wallet-title">
