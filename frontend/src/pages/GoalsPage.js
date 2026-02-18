@@ -330,14 +330,14 @@ export default function GoalsPage() {
 
       {/* Create/Edit Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-xl w-full max-w-lg my-8">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto backdrop-blur-sm">
+          <div className="bg-white rounded-2xl w-full max-w-lg my-8 shadow-2xl">
             <div className="flex items-center justify-between p-6 border-b border-slate-200">
-              <h2 className="font-heading font-bold text-xl text-primary-main">
+              <h2 className="font-heading font-bold text-xl text-slate-900">
                 {editingGoal ? 'Editar Meta' : 'Nova Meta'}
               </h2>
-              <button onClick={closeModal} className="text-slate-400 hover:text-slate-600">
-                <X className="w-6 h-6" />
+              <button onClick={closeModal} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+                <X className="w-5 h-5" />
               </button>
             </div>
 
@@ -361,7 +361,7 @@ export default function GoalsPage() {
                   <select
                     value={formData.metric}
                     onChange={(e) => setFormData({ ...formData, metric: e.target.value })}
-                    className="w-full h-10 px-3 border border-slate-200 rounded-lg"
+                    className="w-full h-10 px-3 border border-slate-200 rounded-lg bg-white focus:ring-2 focus:ring-brand-main focus:border-brand-main"
                     required
                   >
                     <option value="sales">Vendas</option>
@@ -396,7 +396,7 @@ export default function GoalsPage() {
                   <select
                     value={formData.bonus_type}
                     onChange={(e) => setFormData({ ...formData, bonus_type: e.target.value })}
-                    className="w-full h-10 px-3 border border-slate-200 rounded-lg"
+                    className="w-full h-10 px-3 border border-slate-200 rounded-lg bg-white focus:ring-2 focus:ring-brand-main focus:border-brand-main"
                   >
                     <option value="fixed">Valor Fixo (R$)</option>
                     <option value="percentage">Percentual (%)</option>
@@ -428,23 +428,30 @@ export default function GoalsPage() {
                   id="active"
                   checked={formData.active}
                   onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
-                  className="w-4 h-4"
+                  className="w-4 h-4 rounded border-slate-300 text-brand-main focus:ring-brand-main"
                 />
                 <label htmlFor="active" className="text-sm text-slate-700">Meta ativa</label>
               </div>
 
               <div className="flex gap-3 pt-4">
-                <Button type="button" variant="secondary" onClick={closeModal} className="flex-1">
+                <button 
+                  type="button" 
+                  onClick={closeModal} 
+                  className="flex-1 px-5 py-2.5 border border-slate-200 text-slate-700 font-medium rounded-xl hover:bg-slate-50 transition-colors"
+                >
                   Cancelar
-                </Button>
-                <Button type="submit" className="flex-1">
+                </button>
+                <button 
+                  type="submit" 
+                  className="flex-1 px-5 py-2.5 bg-brand-main text-white font-medium rounded-xl hover:bg-blue-700 transition-colors shadow-sm"
+                >
                   {editingGoal ? 'Salvar' : 'Criar Meta'}
-                </Button>
+                </button>
               </div>
             </form>
           </div>
         </div>
       )}
-    </DashboardLayout>
+    </AppLayout>
   );
 }
