@@ -2876,6 +2876,77 @@ async def run_job_manually(request: Request, job_id: str, user: dict = Depends(r
     else:
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
 
+# ==================== IN-APP NOTIFICATIONS ====================
+
+@app.get("/api/notifications")
+async def get_notifications(request: Request, user: dict = Depends(get_current_user), limit: int = 50):
+    """Get user's in-app notifications"""
+    db = request.app.db
+    
+    notifications = await db.notifications.find(
+        {"user_id": user["user_id"]},
+        {"_id": 0}
+    ).sort("created_at", -1).limit(limit).to_list(limit)
+    
+    unread_count = await db.notifications.count_documents({
+        "user_id": user["user_id"],
+        "read": False
+    })
+    
+    return {"notifications": notifications, "unread_count": unread_count}
+
+@app.get("/api/notifications/unread-count")
+async def get_unread_count(request: Request, user: dict = Depends(get_current_user)):
+    """Get count of unread notifications"""
+    db = request.app.db
+    
+    count = await db.notifications.count_documents({
+        "user_id": user["user_id"],
+        "read": False
+    })
+    
+    return {"count": count}
+
+@app.post("/api/notifications/{notification_id}/read")
+async def mark_notification_read(request: Request, notification_id: str, user: dict = Depends(get_current_user)):
+    """Mark a notification as read"""
+    db = request.app.db
+    
+    await db.notifications.update_one(
+        {"notification_id": notification_id, "user_id": user["user_id"]},
+        {"$set": {"read": True, "read_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    return {"message": "Notification marked as read"}
+
+@app.post("/api/notifications/read-all")
+async def mark_all_notifications_read(request: Request, user: dict = Depends(get_current_user)):
+    """Mark all notifications as read"""
+    db = request.app.db
+    
+    await db.notifications.update_many(
+        {"user_id": user["user_id"], "read": False},
+        {"$set": {"read": True, "read_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    return {"message": "All notifications marked as read"}
+
+async def create_notification(db, user_id: str, title: str, body: str, notification_type: str = "system", data: dict = None):
+    """Create an in-app notification"""
+    notification = {
+        "notification_id": generate_id("notif_"),
+        "user_id": user_id,
+        "title": title,
+        "body": body,
+        "type": notification_type,
+        "data": data or {},
+        "read": False,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.notifications.insert_one(notification)
+    return notification
+
 # ==================== HEALTH CHECK ====================
 
 @app.get("/api/health")
