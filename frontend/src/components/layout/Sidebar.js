@@ -130,7 +130,7 @@ export default function Sidebar({ isOpen, onClose }) {
               {user?.name || 'Usuário'}
             </h3>
             <p className="text-sm text-slate-400 mt-0.5">
-              {ACCESS_LEVELS[accessLevel] || 'Usuário'}
+              {ACCESS_LEVELS[accessLevel]?.name || 'Usuário'}
             </p>
 
             {/* Quick Stats */}
