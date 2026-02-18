@@ -9,7 +9,7 @@ import json
 from datetime import datetime
 
 class MLMAPITester:
-    def __init__(self, base_url="http://localhost:8001"):
+    def __init__(self, base_url="https://jnilxmg9-stage-preview.emergentagent.com"):
         self.base_url = base_url
         self.admin_token = None
         self.regular_token = None
