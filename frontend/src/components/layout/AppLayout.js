@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import Sidebar from './Sidebar';
 import BottomNav from './BottomNav';
+import NotificationsDropdown from '../NotificationsDropdown';
 import { Menu, Bell, Search, ChevronLeft, ArrowLeft } from 'lucide-react';
 import { cn, formatCurrency } from '../../lib/utils';
 import { useNavigate, useLocation } from 'react-router-dom';
