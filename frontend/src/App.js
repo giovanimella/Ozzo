@@ -16,6 +16,11 @@ import SettingsPage from './pages/SettingsPage';
 import NetworkPage from './pages/NetworkPage';
 import StorePage from './pages/StorePage';
 import ProfilePage from './pages/ProfilePage';
+import CheckoutPage from './pages/CheckoutPage';
+import OrdersPage from './pages/OrdersPage';
+import WithdrawalsAdminPage from './pages/WithdrawalsAdminPage';
+import LogsPage from './pages/LogsPage';
+import ReportsPage from './pages/ReportsPage';
 
 // Protected Route Component
 function ProtectedRoute({ children, minAccessLevel = 99 }) {
