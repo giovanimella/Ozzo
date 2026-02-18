@@ -15,6 +15,12 @@ const getMenuItems = (accessLevel) => {
   // Dashboard - all users
   items.push({ icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' });
 
+  // Chat - todos podem acessar
+  items.push({ icon: MessageCircle, label: 'Chat', path: '/chat' });
+
+  // Suporte - todos podem acessar
+  items.push({ icon: Headphones, label: 'Suporte', path: '/support' });
+
   // Admin Técnico (0) e Admin Geral (1)
   if (accessLevel <= 1) {
     items.push({ icon: Users, label: 'Usuários', path: '/users' });
