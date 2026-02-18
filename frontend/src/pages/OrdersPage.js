@@ -168,14 +168,12 @@ export default function OrdersPage() {
                           {getStatusBadge(order.order_status)}
                         </td>
                         <td className="p-4 text-right">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
+                          <button 
                             onClick={() => setSelectedOrder(order)}
+                            className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
                           >
                             <Eye className="w-4 h-4" />
-                            Ver
-                          </Button>
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -191,61 +189,66 @@ export default function OrdersPage() {
                   Página {page} de {totalPages}
                 </p>
                 <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
+                  <button
                     onClick={() => setPage(p => Math.max(1, p - 1))}
                     disabled={page === 1}
+                    className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg disabled:opacity-50 transition-colors"
                   >
                     <ChevronLeft className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
+                  </button>
+                  <button
                     onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                     disabled={page === totalPages}
+                    className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg disabled:opacity-50 transition-colors"
                   >
                     <ChevronRight className="w-4 h-4" />
-                  </Button>
+                  </button>
                 </div>
               </div>
             )}
-          </CardContent>
-        </Card>
+        </DashCard>
       </div>
 
       {/* Order Detail Modal */}
       {selectedOrder && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-xl w-full max-w-2xl my-8">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto backdrop-blur-sm">
+          <div className="bg-white rounded-2xl w-full max-w-2xl my-8 shadow-2xl">
             <div className="p-6 border-b border-slate-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="font-heading font-bold text-xl text-primary-main">
+                  <h2 className="font-heading font-bold text-xl text-slate-900">
                     Pedido #{selectedOrder.order_id.slice(-8).toUpperCase()}
                   </h2>
                   <p className="text-sm text-slate-500">
                     {formatDateTime(selectedOrder.created_at)}
                   </p>
                 </div>
-                {getStatusBadge(selectedOrder.order_status)}
+                <div className="flex items-center gap-2">
+                  {getStatusBadge(selectedOrder.order_status)}
+                  <button 
+                    onClick={() => setSelectedOrder(null)}
+                    className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
             </div>
 
             <div className="p-6 space-y-6 max-h-[60vh] overflow-y-auto">
               {/* Items */}
               <div>
-                <h3 className="font-medium text-primary-main mb-3">Itens do Pedido</h3>
+                <h3 className="font-medium text-slate-900 mb-3">Itens do Pedido</h3>
                 <div className="space-y-2">
                   {selectedOrder.items?.map((item, idx) => (
                     <div key={idx} className="flex justify-between p-3 bg-slate-50 rounded-lg">
                       <div>
-                        <p className="font-medium">{item.name}</p>
+                        <p className="font-medium text-slate-900">{item.name}</p>
                         <p className="text-sm text-slate-500">
                           {formatCurrency(item.price)} x {item.quantity}
                         </p>
                       </div>
-                      <p className="font-medium">{formatCurrency(item.total)}</p>
+                      <p className="font-medium text-slate-900">{formatCurrency(item.total)}</p>
                     </div>
                   ))}
                 </div>
