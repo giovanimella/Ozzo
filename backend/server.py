@@ -1435,6 +1435,18 @@ async def process_order_commissions(db, order, settings):
         try:
             amount_str = f"R$ {comm['amount']:.2f}".replace('.', ',')
             level_str = f"{comm['level']}º nível" if comm['level'] > 0 else "indicação direta"
+            
+            # Create in-app notification
+            await create_notification(
+                db,
+                comm["user_id"],
+                "Nova Comissão Recebida! 💰",
+                f"Você recebeu {amount_str} de comissão ({level_str}). O valor será liberado em 7 dias.",
+                "commission",
+                {"url": "/commissions", "amount": comm["amount"]}
+            )
+            
+            # Also send push notification
             await send_push_notification(
                 db,
                 comm["user_id"],
