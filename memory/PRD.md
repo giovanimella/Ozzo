@@ -140,24 +140,25 @@ Sistema de Marketing Multinível com 7 níveis de acesso hierárquicos, comissõ
 ### P1 - High Priority
 - [x] ~~Relatórios exportáveis (PDF/Excel)~~ - CSV/JSON implementado
 - [x] ~~Ranking de revendedores~~ - Implementado com 4 métricas
-- [ ] Sistema de metas e bonificações
+- [x] ~~Sistema de metas e bonificações~~ - Implementado com progresso e conquistas
 - [ ] Notificações push/email
 - [ ] Histórico detalhado de comissões
 
 ### P2 - Medium Priority
+- [x] ~~Sistema de links de indicação e tracking~~ - Implementado com estatísticas
 - [ ] Sistema de tickets/suporte
 - [ ] Chat entre supervisor e revendedor
 - [ ] Calculadora de frete real (Correios/Transportadoras)
 - [ ] Integração com ERP
 - [ ] App mobile (React Native)
+- [ ] QR Code para links de indicação (estrutura pronta, geração de imagem pendente)
 
 ## Next Tasks List
 1. **Ativar PagSeguro** - Usuário precisa fornecer credenciais
 2. **Ativar MercadoPago** - Usuário precisa fornecer credenciais
 3. **Ativar Resend** - Usuário precisa fornecer API key
 4. Criar job de verificação mensal de qualificações (scheduler)
-5. Implementar exportação de relatórios (PDF/Excel)
-6. Adicionar ranking de revendedores no dashboard
+5. Geração de QR Code para links de indicação
 
 ## Technical Debt
 - Otimizar queries de árvore de rede (usar $graphLookup)
@@ -165,6 +166,7 @@ Sistema de Marketing Multinível com 7 níveis de acesso hierárquicos, comissõ
 - Implementar rate limiting nas APIs públicas
 - Refatorar server.py em módulos (routes/)
 - Criar serviço de API centralizado no frontend
+- Migrar para React Router v7 (warnings atuais)
 
 ---
-*Last updated: February 18, 2026 - Todas as páginas P0 implementadas e testadas*
+*Last updated: February 18, 2026 - Ranking, Metas, Links de Indicação e Exportação implementados*
