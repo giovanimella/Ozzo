@@ -302,9 +302,11 @@ async def register(request: Request, data: UserRegister):
     })
     
     token = create_token({"user_id": user["user_id"]})
-    user.pop("password")
     
-    return {"token": token, "user": user}
+    # Re-fetch user without _id to avoid serialization issues
+    user_response = await db.users.find_one({"user_id": user["user_id"]}, {"_id": 0, "password": 0})
+    
+    return {"token": token, "user": user_response}
 
 @app.post("/api/auth/login")
 async def login(request: Request, response: Response, data: UserLogin):
