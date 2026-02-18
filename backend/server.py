@@ -857,7 +857,9 @@ async def create_order(request: Request, data: OrderCreate, user: dict = Depends
     
     await db.orders.insert_one(order)
     
-    return order
+    # Re-fetch order without _id
+    order_response = await db.orders.find_one({"order_id": order["order_id"]}, {"_id": 0})
+    return order_response
 
 @app.get("/api/orders")
 async def list_orders(
