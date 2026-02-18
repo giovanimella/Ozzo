@@ -41,6 +41,7 @@ export default function UsersPage() {
 
   useEffect(() => {
     fetchUsers();
+    fetchSupervisors();
   }, [page, filter]);
 
   const fetchUsers = async () => {
@@ -65,6 +66,21 @@ export default function UsersPage() {
       toast.error('Erro ao carregar usuários');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSupervisors = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/admin/supervisors`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        setSupervisors(data.supervisors || []);
+      }
+    } catch (error) {
+      console.error('Error fetching supervisors:', error);
     }
   };
 
