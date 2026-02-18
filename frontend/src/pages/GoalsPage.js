@@ -177,90 +177,83 @@ export default function GoalsPage() {
   const isAdmin = accessLevel <= 1;
 
   return (
-    <DashboardLayout>
+    <AppLayout title="Metas e Bonificações" subtitle="Acompanhe suas metas e conquistas">
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="font-heading font-bold text-2xl text-primary-main flex items-center gap-2" data-testid="goals-title">
-              <Target className="w-7 h-7 text-accent-main" />
-              Metas e Bonificações
-            </h1>
-            <p className="text-slate-600">Acompanhe suas metas e conquistas</p>
-          </div>
-
-          {isAdmin && (
-            <Button onClick={() => setShowModal(true)} data-testid="create-goal-btn">
+        {/* Header with action */}
+        {isAdmin && (
+          <div className="flex justify-end">
+            <button 
+              onClick={() => setShowModal(true)} 
+              data-testid="create-goal-btn"
+              className="flex items-center gap-2 px-5 py-2.5 bg-brand-main text-white font-medium rounded-xl hover:bg-blue-700 transition-colors shadow-sm"
+            >
               <Plus className="w-4 h-4" />
               Nova Meta
-            </Button>
-          )}
-        </div>
+            </button>
+          </div>
+        )}
 
         {/* My Achievements */}
         {achievements.length > 0 && (
-          <Card className="bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-emerald-700">
-                <Trophy className="w-5 h-5" />
-                Minhas Conquistas ({achievements.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-3">
-                {achievements.slice(0, 5).map((ach) => (
-                  <div
-                    key={ach.achievement_id}
-                    className="flex items-center gap-2 px-4 py-2 bg-white rounded-full border border-emerald-200 shadow-sm"
-                  >
-                    <CheckCircle className="w-4 h-4 text-emerald-600" />
-                    <span className="text-sm font-medium text-emerald-700">{ach.goal_name}</span>
-                  </div>
-                ))}
-                {achievements.length > 5 && (
-                  <span className="text-sm text-emerald-600 self-center">
-                    +{achievements.length - 5} mais
-                  </span>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-6">
+            <h3 className="font-heading font-semibold text-emerald-700 flex items-center gap-2 mb-4">
+              <Trophy className="w-5 h-5" />
+              Minhas Conquistas ({achievements.length})
+            </h3>
+            <div className="flex flex-wrap gap-3">
+              {achievements.slice(0, 5).map((ach) => (
+                <div
+                  key={ach.achievement_id}
+                  className="flex items-center gap-2 px-4 py-2 bg-white rounded-full border border-emerald-200 shadow-sm"
+                >
+                  <CheckCircle className="w-4 h-4 text-emerald-600" />
+                  <span className="text-sm font-medium text-emerald-700">{ach.goal_name}</span>
+                </div>
+              ))}
+              {achievements.length > 5 && (
+                <span className="text-sm text-emerald-600 self-center">
+                  +{achievements.length - 5} mais
+                </span>
+              )}
+            </div>
+          </div>
         )}
 
         {/* Active Goals */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {loading ? (
             <div className="col-span-full flex items-center justify-center h-64">
-              <div className="w-8 h-8 border-4 border-primary-main border-t-transparent rounded-full spinner" />
+              <div className="w-8 h-8 border-4 border-brand-main border-t-transparent rounded-full animate-spin" />
             </div>
           ) : goals.length === 0 ? (
-            <div className="col-span-full text-center py-12">
+            <div className="col-span-full text-center py-12 bg-white rounded-xl border border-slate-100">
               <Target className="w-12 h-12 text-slate-300 mx-auto mb-4" />
               <p className="text-slate-500">Nenhuma meta disponível</p>
             </div>
           ) : (
             goals.map((goal) => (
-              <Card key={goal.goal_id} className={`overflow-hidden ${goal.progress?.completed ? 'border-emerald-300 bg-emerald-50/30' : ''}`}>
-                <div className={`h-2 ${getProgressColor(goal.progress?.percentage || 0)}`} 
+              <div key={goal.goal_id} className={`bg-white rounded-xl border shadow-sm overflow-hidden ${goal.progress?.completed ? 'border-emerald-300' : 'border-slate-100'}`}>
+                <div className={`h-1.5 ${getProgressColor(goal.progress?.percentage || 0)}`} 
                   style={{ width: `${Math.min(goal.progress?.percentage || 0, 100)}%` }} 
                 />
                 
-                <CardContent className="p-5">
+                <div className="p-5">
                   <div className="flex items-start justify-between mb-3">
                     <div>
-                      <h3 className="font-heading font-bold text-primary-main">{goal.name}</h3>
+                      <h3 className="font-heading font-bold text-slate-900">{goal.name}</h3>
                       <p className="text-sm text-slate-500">{goal.description}</p>
                     </div>
                     
                     {goal.progress?.completed ? (
-                      <Badge variant="success" className="flex items-center gap-1">
+                      <span className="flex items-center gap-1 px-2 py-1 text-xs font-medium bg-emerald-100 text-emerald-700 rounded-full">
                         <CheckCircle className="w-3 h-3" />
                         Concluída
-                      </Badge>
+                      </span>
                     ) : (
-                      <Badge variant="warning" className="flex items-center gap-1">
+                      <span className="flex items-center gap-1 px-2 py-1 text-xs font-medium bg-amber-100 text-amber-700 rounded-full">
                         <Clock className="w-3 h-3" />
                         Em Andamento
-                      </Badge>
+                      </span>
                     )}
                   </div>
 
@@ -297,8 +290,8 @@ export default function GoalsPage() {
 
                   <div className="flex items-center justify-between pt-3 border-t border-slate-100">
                     <div className="flex items-center gap-2">
-                      <Gift className="w-4 h-4 text-accent-main" />
-                      <span className="text-sm font-medium text-accent-main">
+                      <Gift className="w-4 h-4 text-amber-500" />
+                      <span className="text-sm font-medium text-amber-600">
                         Bônus: {goal.bonus_type === 'percentage' 
                           ? `${goal.bonus_amount}%`
                           : formatCurrency(goal.bonus_amount)}
@@ -313,17 +306,23 @@ export default function GoalsPage() {
 
                   {isAdmin && (
                     <div className="flex gap-2 mt-4 pt-3 border-t border-slate-100">
-                      <Button variant="ghost" size="sm" onClick={() => openEditModal(goal)}>
+                      <button 
+                        onClick={() => openEditModal(goal)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                      >
                         <Edit2 className="w-4 h-4" />
                         Editar
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleDelete(goal.goal_id)}>
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </Button>
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(goal.goal_id)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   )}
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))
           )}
         </div>
