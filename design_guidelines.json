@@ -1,151 +1,227 @@
 {
   "identity": {
-    "name": "Vanguard MLM System",
-    "theme": "The Diplomat",
-    "tone": "Professional, Empowering, Wealth-oriented, Trustworthy",
-    "description": "A sophisticated MLM platform that balances corporate trust with the excitement of sales growth. Uses a 'Jewel & Luxury' aesthetic for high-ranking users and a clean, 'Swiss' layout for administrative tasks."
+    "name": "E1",
+    "role": "Anti-AI Creative Designer",
+    "principles": [
+      "Fusion over Imitation: Mix disparate disciplines.",
+      "Emotion First: Every pixel must evoke trust and ambition.",
+      "Content is King: Data must be legible and actionable.",
+      "Zoom In: Focus on the details that matter (metrics, goals).",
+      "Negative Space: Use it to create breathing room.",
+      "Contrast: High contrast for readability and impact."
+    ]
   },
-  "typography": {
-    "headings": {
-      "family": "Manrope",
-      "usage": "Headings, KPIs, Navigation",
-      "weights": ["600", "700", "800"],
-      "letterSpacing": "tight"
-    },
-    "body": {
-      "family": "Inter",
-      "usage": "Paragraphs, Tables, Inputs",
-      "weights": ["400", "500"]
-    }
+  "project": {
+    "name": "Vanguard MLM Redesign",
+    "type": "SaaS Dashboard",
+    "theme": "Light Mode (Primary) with Deep Blue Accents",
+    "target_audience": "Resellers, Admins, Team Leaders",
+    "emotion": "Professional, Trustworthy, Aspiring, Clean"
   },
-  "colors": {
-    "palette": {
-      "primary": {
-        "main": "#0f172a",
-        "light": "#1e293b",
-        "dark": "#020617",
-        "description": "Midnight Navy - Used for sidebars, primary buttons, and heavy headers. Convey authority."
+  "design_system": {
+    "colors": {
+      "palette": {
+        "primary": {
+          "main": "#0f172a",
+          "light": "#334155",
+          "dark": "#020617",
+          "description": "Deep Navy/Slate for Sidebar and Headings. Commands authority."
+        },
+        "brand": {
+          "main": "#2563eb",
+          "light": "#60a5fa",
+          "dark": "#1e40af",
+          "subtle": "#eff6ff",
+          "description": "Vibrant Royal Blue for Actions, Links, and Progress. Represents trust and growth."
+        },
+        "success": {
+          "main": "#10b981",
+          "light": "#34d399",
+          "description": "Emerald Green for positive financial metrics and growth."
+        },
+        "warning": {
+          "main": "#f59e0b",
+          "light": "#fbbf24",
+          "description": "Amber/Gold for bonuses, rankings, and alerts."
+        },
+        "background": {
+          "main": "#f8fafc",
+          "card": "#ffffff",
+          "sidebar": "#0f172a",
+          "description": "Clean white/slate-50 background. Sidebar is dark for contrast."
+        },
+        "text": {
+          "primary": "#0f172a",
+          "secondary": "#64748b",
+          "on_dark": "#f8fafc",
+          "muted_on_dark": "#94a3b8"
+        }
       },
-      "secondary": {
-        "main": "#3b82f6",
-        "light": "#60a5fa",
-        "description": "Electric Blue - Used for active states, links, and primary actions in dark mode."
-      },
-      "accent": {
-        "main": "#f59e0b",
-        "light": "#fbbf24",
-        "description": "Gold/Amber - Used exclusively for 'Success' metrics: Commissions, Ranks, Bonuses."
-      },
-      "neutral": {
-        "bg_main": "#f8fafc",
-        "bg_card": "#ffffff",
-        "text_primary": "#0f172a",
-        "text_secondary": "#64748b",
-        "border": "#e2e8f0"
-      },
-      "status": {
-        "success": "#10b981",
-        "error": "#ef4444",
-        "warning": "#f59e0b",
-        "info": "#3b82f6"
-      }
+      "rules": [
+        "Use 'brand.main' for primary buttons and active states.",
+        "Use 'brand.subtle' for hover backgrounds on light surfaces.",
+        "Sidebar text must be 'text.on_dark' (white) or 'text.muted_on_dark' (grey-blue).",
+        "Never use pure black (#000000). Use 'primary.dark' (#020617)."
+      ]
     },
-    "gradients": {
-      "gold_rush": "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
-      "midnight_depth": "linear-gradient(180deg, #0f172a 0%, #1e293b 100%)"
+    "typography": {
+      "font_family": {
+        "heading": "Manrope, sans-serif",
+        "body": "Inter, sans-serif"
+      },
+      "scale": {
+        "h1": "text-4xl font-bold tracking-tight",
+        "h2": "text-3xl font-bold tracking-tight",
+        "h3": "text-2xl font-semibold",
+        "body_lg": "text-lg leading-relaxed",
+        "body_base": "text-base leading-normal",
+        "body_sm": "text-sm text-slate-500",
+        "caption": "text-xs font-medium uppercase tracking-wider text-slate-400"
+      },
+      "rules": [
+        "Headings use Manrope. Body uses Inter.",
+        "Stats numbers (e.g., $1,200) should be large (text-3xl or 4xl) and 'font-heading'.",
+        "Sidebar links should be 'text-sm font-medium'."
+      ]
+    },
+    "spacing": {
+      "grid": "gap-6",
+      "card_padding": "p-6",
+      "section_padding": "py-8",
+      "sidebar_width": "w-72"
+    },
+    "borders": {
+      "radius": {
+        "card": "rounded-xl",
+        "button": "rounded-lg",
+        "input": "rounded-lg"
+      },
+      "width": "border",
+      "color": "border-slate-200"
+    },
+    "shadows": {
+      "card": "shadow-sm hover:shadow-md transition-shadow duration-200",
+      "dropdown": "shadow-lg ring-1 ring-black ring-opacity-5",
+      "sidebar": "shadow-xl"
     }
   },
   "layout_strategies": {
-    "dashboard": {
-      "type": "Bento Grid",
-      "grid_cols": "grid-cols-1 md:grid-cols-12",
-      "gap": "gap-6",
-      "widgets": {
-        "hero_stat": "col-span-full md:col-span-8 lg:col-span-6 row-span-2 (e.g., Total Earnings)",
-        "secondary_stat": "col-span-full md:col-span-4 lg:col-span-3 (e.g., Active Referrals)",
-        "list_widget": "col-span-full md:col-span-6 lg:col-span-3 row-span-2 (e.g., Recent Sales)",
-        "action_grid": "col-span-full md:col-span-12 lg:col-span-12 (Quick Actions)"
-      }
+    "dashboard_grid": {
+      "mobile": "grid-cols-1",
+      "tablet": "grid-cols-2",
+      "desktop": "grid-cols-4",
+      "gap": "gap-6"
     },
-    "ecommerce": {
-      "product_grid": "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8",
-      "card_style": "Minimalist, focus on image. 'Add to Cart' appears on hover or mobile bottom."
+    "sidebar": {
+      "position": "fixed left-0 top-0 h-full",
+      "width": "w-72",
+      "z_index": "z-50",
+      "style": "bg-slate-900 text-white flex flex-col",
+      "sections": [
+        {
+          "name": "Profile Header",
+          "style": "p-6 border-b border-slate-800 flex flex-col items-center text-center",
+          "elements": ["Avatar (w-20 h-20)", "Name (text-lg font-bold mt-3)", "Role (text-sm text-slate-400)", "Quick Stats Row"]
+        },
+        {
+          "name": "Navigation",
+          "style": "flex-1 overflow-y-auto py-6 px-4 space-y-1",
+          "item_style": "flex items-center px-4 py-3 rounded-lg hover:bg-slate-800 transition-colors text-sm font-medium"
+        },
+        {
+          "name": "Footer",
+          "style": "p-4 border-t border-slate-800",
+          "elements": ["Logout Button", "Settings Link"]
+        }
+      ]
     },
-    "network_tree": {
-      "style": "Organizational Chart",
-      "connector_color": "#cbd5e1",
-      "node_style": "Rounded rectangle with avatar and rank badge"
+    "main_content": {
+      "margin": "ml-72",
+      "padding": "p-8",
+      "max_width": "max-w-7xl mx-auto"
     }
   },
   "components": {
-    "buttons": {
-      "primary": "bg-primary-main text-white hover:bg-primary-light shadow-lg hover:shadow-primary/25 rounded-lg px-6 py-3 font-semibold transition-all active:scale-95",
-      "secondary": "bg-white text-primary-main border border-input hover:bg-slate-50 rounded-lg px-6 py-3 font-medium transition-all",
-      "ghost": "hover:bg-slate-100 text-slate-700 hover:text-slate-900 rounded-lg"
+    "card": {
+      "base": "bg-white rounded-xl border border-slate-100 shadow-sm",
+      "header": "px-6 py-4 border-b border-slate-50 flex justify-between items-center",
+      "body": "p-6"
     },
-    "cards": {
-      "dashboard": "bg-white border border-slate-100 shadow-sm rounded-xl p-6 hover:shadow-md transition-shadow",
-      "highlight": "bg-primary-main text-white shadow-xl rounded-xl p-6 relative overflow-hidden"
+    "stat_card": {
+      "style": "flex flex-col p-6 bg-white rounded-xl shadow-sm border border-slate-100 hover:border-blue-100 transition-colors",
+      "elements": ["Icon (p-3 rounded-lg bg-blue-50 text-blue-600 mb-4 w-fit)", "Label (text-sm text-slate-500)", "Value (text-2xl font-bold text-slate-900)", "Trend (text-xs font-medium text-emerald-600 flex items-center mt-1)"]
     },
-    "inputs": {
-      "style": "bg-white border-slate-200 focus:ring-2 focus:ring-primary-main/20 focus:border-primary-main rounded-lg h-11 text-base transition-all"
+    "button": {
+      "primary": "bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-5 rounded-lg shadow-sm hover:shadow transition-all active:scale-95",
+      "secondary": "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium py-2.5 px-5 rounded-lg transition-colors",
+      "ghost": "text-slate-600 hover:bg-slate-100 hover:text-slate-900 font-medium py-2 px-4 rounded-lg transition-colors"
     },
-    "navigation": {
-      "sidebar": "Fixed left, bg-primary-main text-slate-300 w-64. Active item: bg-white/10 text-white font-semibold border-r-4 border-accent-main",
-      "mobile_nav": "Fixed bottom, bg-white border-t border-slate-200 shadow-lg z-50 h-16 flex justify-around items-center text-xs font-medium"
+    "chart_container": {
+      "style": "w-full h-[300px] mt-4"
     }
   },
-  "motion": {
-    "page_transition": "initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}",
-    "hover_lift": "hover:-translate-y-1 hover:shadow-lg transition-transform duration-200",
-    "stagger_list": "variants={{ hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.1 } } }}"
-  },
-  "images": {
-    "landing_hero": "https://images.unsplash.com/photo-1758518730523-c9f6336ebdae?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODh8MHwxfHNlYXJjaHwyfHxkaXZlcnNlJTIwYnVzaW5lc3MlMjB0ZWFtJTIwY2VsZWJyYXRpbmclMjBzdWNjZXNzJTIwbW9kZXJuJTIwb2ZmaWNlfGVufDB8fHx8MTc3MTQyMDA2M3ww&ixlib=rb-4.1.0&q=85",
-    "products": [
-      {
-        "name": "Vitality Supplement",
-        "url": "https://images.unsplash.com/photo-1763757933292-d8290692edde?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzh8MHwxfHNlYXJjaHw0fHxsdXh1cnklMjBoZWFsdGglMjBzdXBwbGVtZW50JTIwYm90dGxlJTIwd2hpdGUlMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc3MTQyMDA2MXww&ixlib=rb-4.1.0&q=85",
-        "category": "Health"
+  "assets": {
+    "images": {
+      "user_profile": {
+        "url": "https://images.pexels.com/photos/262391/pexels-photo-262391.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "alt": "User Profile"
       },
-      {
-        "name": "Luxe Serum",
-        "url": "https://images.pexels.com/photos/29611441/pexels-photo-29611441.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
-        "category": "Beauty"
+      "shop_products": [
+        {
+          "url": "https://images.pexels.com/photos/14433549/pexels-photo-14433549.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+          "alt": "Vitamin Gummys",
+          "category": "Health"
+        },
+        {
+          "url": "https://images.pexels.com/photos/14433537/pexels-photo-14433537.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+          "alt": "Supplement Jar",
+          "category": "Wellness"
+        }
+      ]
+    },
+    "icons": {
+      "library": "lucide-react",
+      "style": "stroke-width={1.5} size={20}",
+      "mapping": {
+        "dashboard": "LayoutDashboard",
+        "network": "Users",
+        "orders": "ShoppingBag",
+        "wallet": "Wallet",
+        "reports": "BarChart3",
+        "settings": "Settings",
+        "shop": "Store",
+        "logout": "LogOut"
       }
-    ],
-    "avatars": [
-      "https://images.unsplash.com/photo-1762522927402-f390672558d8?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzNTl8MHwxfHNlYXJjaHw0fHxwcm9mZXNzaW9uYWwlMjBidXNpbmVzcyUyMHBvcnRyYWl0JTIwc21pbGluZ3xlbnwwfHx8fDE3NzE0MjAwNjR8MA&ixlib=rb-4.1.0&q=85",
-      "https://images.pexels.com/photos/33871730/pexels-photo-33871730.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
-    ]
+    }
   },
   "instructions_to_main_agent": {
-    "project_setup": "Initialize React + Vite + Tailwind. Use 'Shadcn/UI' for interactive components (Dialog, Dropdown, Select, Calendar, Tabs, Sonner).",
-    "theme_logic": "Implement a 'ThemeToggle' but default to Light Mode for Admin. Use Dark Mode for 'Ambassador' public profiles.",
-    "layout_logic": "Create a layout wrapper 'DashboardLayout' with sidebar and topbar. Create 'AuthLayout' for login/register centered cards.",
-    "icons": "Use 'lucide-react' for general UI. Use 'react-icons/fa' (FontAwesome) for social or specific brand icons.",
-    "charts": "Use 'Recharts' (via Shadcn Chart) for sales/commission graphs. Use AreaChart for revenue trends.",
-    "animations": "Use 'framer-motion' for simple page transitions and list staggering. Don't over-animate the admin dashboard."
+    "setup": [
+      "Ensure 'lucide-react' is installed.",
+      "Update 'tailwind.config.js' with the new color palette (brand, sidebar, etc.).",
+      "Create a 'Sidebar' component in 'src/components/layout/Sidebar.jsx' following the fixed design.",
+      "Create a 'Layout' component that wraps pages with the Sidebar."
+    ],
+    "implementation_order": [
+      "1. Update Tailwind Config.",
+      "2. Create Layout & Sidebar components.",
+      "3. Create Dashboard Page with Stat Cards and Charts (use Recharts or mock charts).",
+      "4. Create Shop Page using the product images.",
+      "5. Ensure responsive design: Sidebar becomes a drawer/hamburger menu on mobile."
+    ],
+    "critical_rules": [
+      "Sidebar MUST be fixed on the left for desktop.",
+      "Profile picture MUST be in the sidebar top-left.",
+      "Use 'Manrope' for all headings.",
+      "Use 'Inter' for all body text.",
+      "Do not use gradients for backgrounds, keep it clean white/slate.",
+      "Add 'data-testid' to all interactive elements."
+    ]
   },
   "universal_guidelines": [
-    "You tend to converge toward generic, 'on distribution' outputs. In frontend design, this creates what users call the 'AI slop' aesthetic. Avoid this: make creative, distinctive frontends that surprise and delight.",
-    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients",
-    "Don't make generic centered layouts, simplistic gradients, and uniform styling.",
-    "Create depth through layered design elements with z-index hierarchy",
-    "Use glass-morphism effects with backdrop filters (12-24px blur)",
-    "You MUST NOT apply universal transition. Eg: transition: all. This results in breaking transforms. Always add transitions for specific interactive elements like button, input excluding transforms",
-    "You MUST NOT center align the app container, ie do not add .App { text-align: center; } in the css file. This disrupts the human natural reading flow of text",
-    "Always use modern button styles like pill-shaped, or sharp button with interaction animations & color relevant to the app style",
-    "NEVER: use AI assistant Emoji characters like 🤖🧠💭💡🔮 etc for icons.",
-    "Every interaction needs micro-animations - hover states, transitions, parallax effects, and entrance animations. Static = dead.",
-    "Use 2-3x more spacing than feels comfortable. Cramped designs look cheap.",
-    "Subtle grain textures, noise overlays, custom cursors, selection states, and loading animations: separates good from extraordinary.",
-    "Main agent relies on these image URLs. Missing categories (especially sponsor logos) = main agent will use placeholder text which is FORBIDDEN",
-    "Prioritize using pre-existing components from src/components/ui when applicable",
-    "Create new components that match the style and conventions of existing components when needed",
-    "Examine existing components to understand the project's component patterns before creating new ones",
-    "Components MUST use named exports (export const ComponentName = ...)",
-    "Pages MUST use default exports (export default function PageName() {...})",
-    "Use 'sonner' for toasts. Sonner component are located in /app/src/components/ui/sonner.tsx"
+    "Avoid 'AI Slop': No generic centered layouts. Use the Dashboard Grid.",
+    "Micro-animations: Add hover states to all sidebar links and cards.",
+    "Spacing: Use 'gap-6' or 'gap-8' for grids. Don't cram content.",
+    "Shadows: Use soft, diffuse shadows. No harsh black shadows.",
+    "Glassmorphism: Use it sparingly, maybe only for the mobile menu overlay."
   ]
 }
