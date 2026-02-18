@@ -356,6 +356,6 @@ export default function SupportPage() {
           </div>
         </div>
       )}
-    </DashboardLayout>
+    </AppLayout>
   );
 }
