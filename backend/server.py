@@ -1711,6 +1711,175 @@ async def update_withdrawal(
     
     return {"message": "Withdrawal updated"}
 
+@app.get("/api/admin/withdrawals/report")
+async def get_withdrawals_report(
+    request: Request,
+    status: str = "approved",
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    user: dict = Depends(require_access_level(1))
+):
+    """Get detailed withdrawal report with user bank info for payment processing"""
+    db = request.app.db
+    
+    # Build query
+    query = {"status": status}
+    
+    if start_date:
+        query["created_at"] = {"$gte": start_date}
+    if end_date:
+        if "created_at" not in query:
+            query["created_at"] = {}
+        query["created_at"]["$lte"] = end_date
+    
+    # Get withdrawals with user info
+    withdrawals = await db.withdrawals.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    
+    # Enrich with user data
+    report_data = []
+    total_amount = 0
+    
+    for w in withdrawals:
+        user_data = await db.users.find_one(
+            {"user_id": w["user_id"]}, 
+            {"_id": 0, "name": 1, "email": 1, "cpf": 1, "phone": 1, "bank_info": 1}
+        )
+        
+        if user_data:
+            bank_info = user_data.get("bank_info", {}) or {}
+            report_item = {
+                "withdrawal_id": w["withdrawal_id"],
+                "user_id": w["user_id"],
+                "name": user_data.get("name", ""),
+                "email": user_data.get("email", ""),
+                "cpf": user_data.get("cpf", ""),
+                "phone": user_data.get("phone", ""),
+                "amount": w["amount"],
+                "status": w["status"],
+                "created_at": w["created_at"],
+                "approved_at": w.get("approved_at"),
+                "bank_name": bank_info.get("bank_name", ""),
+                "bank_code": bank_info.get("bank_code", ""),
+                "agency": bank_info.get("agency", ""),
+                "account": bank_info.get("account", ""),
+                "account_type": bank_info.get("account_type", ""),
+                "pix_key": bank_info.get("pix_key", ""),
+            }
+            report_data.append(report_item)
+            total_amount += w["amount"]
+    
+    return {
+        "report": report_data,
+        "total_count": len(report_data),
+        "total_amount": total_amount,
+        "status_filter": status,
+        "generated_at": datetime.now(timezone.utc).isoformat()
+    }
+
+@app.get("/api/admin/withdrawals/export")
+async def export_withdrawals_report(
+    request: Request,
+    status: str = "approved",
+    format: str = "csv",
+    user: dict = Depends(require_access_level(1))
+):
+    """Export withdrawal report as CSV or JSON"""
+    db = request.app.db
+    
+    # Get report data
+    report_response = await get_withdrawals_report(request, status, None, None, user)
+    report_data = report_response["report"]
+    
+    if format == "json":
+        return report_response
+    
+    # Generate CSV
+    import io
+    import csv
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Header
+    writer.writerow([
+        "ID Saque", "ID Usuário", "Nome", "Email", "CPF", "Telefone",
+        "Valor (R$)", "Status", "Data Solicitação", "Data Aprovação",
+        "Banco", "Código Banco", "Agência", "Conta", "Tipo Conta", "Chave PIX"
+    ])
+    
+    # Data
+    for item in report_data:
+        writer.writerow([
+            item["withdrawal_id"],
+            item["user_id"],
+            item["name"],
+            item["email"],
+            item["cpf"],
+            item["phone"],
+            f"{item['amount']:.2f}",
+            item["status"],
+            item["created_at"],
+            item.get("approved_at", ""),
+            item["bank_name"],
+            item["bank_code"],
+            item["agency"],
+            item["account"],
+            item["account_type"],
+            item["pix_key"]
+        ])
+    
+    csv_content = output.getvalue()
+    output.close()
+    
+    return Response(
+        content=csv_content,
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": f"attachment; filename=saques_{status}_{datetime.now().strftime('%Y%m%d')}.csv"
+        }
+    )
+
+@app.get("/api/admin/supervisors")
+async def list_supervisors(request: Request, user: dict = Depends(require_access_level(1))):
+    """Get list of all supervisors for assignment"""
+    db = request.app.db
+    
+    supervisors = await db.users.find(
+        {"access_level": 2, "status": "active"},
+        {"_id": 0, "user_id": 1, "name": 1, "email": 1}
+    ).to_list(100)
+    
+    return {"supervisors": supervisors}
+
+@app.get("/api/supervisor/users")
+async def get_supervised_users(
+    request: Request,
+    page: int = 1,
+    limit: int = 20,
+    user: dict = Depends(get_current_user)
+):
+    """Get users supervised by the current supervisor"""
+    db = request.app.db
+    
+    # Only supervisors can access this
+    if user.get("access_level") != 2:
+        raise HTTPException(status_code=403, detail="Acesso apenas para supervisores")
+    
+    query = {"supervisor_id": user["user_id"]}
+    
+    total = await db.users.count_documents(query)
+    users = await db.users.find(
+        query,
+        {"_id": 0, "password": 0}
+    ).sort("name", 1).skip((page-1)*limit).limit(limit).to_list(limit)
+    
+    return {
+        "users": users,
+        "total": total,
+        "page": page,
+        "pages": (total + limit - 1) // limit
+    }
+
 # ==================== SETTINGS (Admin Only) ====================
 
 @app.get("/api/settings")
