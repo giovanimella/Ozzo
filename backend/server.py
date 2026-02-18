@@ -52,6 +52,140 @@ ACCESS_LEVELS = {
     6: "embaixador"
 }
 
+# ==================== SCHEDULED JOBS ====================
+
+async def release_commissions_job(db):
+    """Release blocked commissions that are past the 7-day hold period"""
+    try:
+        now = datetime.now(timezone.utc).isoformat()
+        
+        # Find blocked commissions ready for release
+        blocked_commissions = await db.commissions.find({
+            "status": "blocked",
+            "release_at": {"$lte": now}
+        }, {"_id": 0}).to_list(10000)
+        
+        released_count = 0
+        for comm in blocked_commissions:
+            # Update commission status
+            await db.commissions.update_one(
+                {"commission_id": comm["commission_id"]},
+                {"$set": {"status": "available", "released_at": now}}
+            )
+            
+            # Move from blocked to available balance
+            await db.users.update_one(
+                {"user_id": comm["user_id"]},
+                {
+                    "$inc": {
+                        "blocked_balance": -comm["amount"],
+                        "available_balance": comm["amount"]
+                    }
+                }
+            )
+            released_count += 1
+        
+        if released_count > 0:
+            await db.logs.insert_one({
+                "log_id": f"log_{uuid.uuid4().hex[:12]}",
+                "action": "scheduled_commissions_released",
+                "user_id": "system",
+                "details": {"count": released_count},
+                "created_at": now
+            })
+        
+        logger.info(f"Scheduled job: Released {released_count} commissions")
+    except Exception as e:
+        logger.error(f"Error in release_commissions_job: {e}")
+
+async def check_qualifications_job(db):
+    """Monthly check for reseller qualifications"""
+    try:
+        settings = await db.settings.find_one({"settings_id": "global"}, {"_id": 0})
+        
+        min_qualification = settings.get("min_qualification_amount", 100) if settings else 100
+        suspend_months = settings.get("inactive_months_suspend", 6) if settings else 6
+        cancel_months = settings.get("inactive_months_cancel", 12) if settings else 12
+        
+        now = datetime.now(timezone.utc)
+        
+        # Get all resellers
+        resellers = await db.users.find({"access_level": 4}, {"_id": 0}).to_list(10000)
+        
+        suspended_count = 0
+        cancelled_count = 0
+        qualified_count = 0
+        
+        for reseller in resellers:
+            # Check if qualified this month
+            personal_volume = reseller.get("personal_volume", 0)
+            
+            if personal_volume >= min_qualification:
+                # Update qualification date
+                await db.users.update_one(
+                    {"user_id": reseller["user_id"]},
+                    {"$set": {"last_qualification": now.isoformat()}}
+                )
+                qualified_count += 1
+                continue
+            
+            # Check inactivity
+            last_qual = reseller.get("last_qualification")
+            if not last_qual:
+                continue
+            
+            last_qual_date = datetime.fromisoformat(last_qual)
+            if last_qual_date.tzinfo is None:
+                last_qual_date = last_qual_date.replace(tzinfo=timezone.utc)
+            
+            months_inactive = (now - last_qual_date).days // 30
+            
+            if months_inactive >= cancel_months and reseller.get("status") != "cancelled":
+                # Cancel and restructure network
+                await db.users.update_one(
+                    {"user_id": reseller["user_id"]},
+                    {"$set": {"status": "cancelled"}}
+                )
+                
+                # Move downline up to sponsor
+                await db.users.update_many(
+                    {"sponsor_id": reseller["user_id"]},
+                    {
+                        "$set": {"sponsor_id": reseller.get("sponsor_id")},
+                        "$inc": {"hierarchy_level": -1}
+                    }
+                )
+                cancelled_count += 1
+            
+            elif months_inactive >= suspend_months and reseller.get("status") == "active":
+                await db.users.update_one(
+                    {"user_id": reseller["user_id"]},
+                    {"$set": {"status": "suspended"}}
+                )
+                suspended_count += 1
+        
+        # Reset monthly volumes for all resellers and leaders
+        await db.users.update_many(
+            {"access_level": {"$in": [3, 4]}},
+            {"$set": {"personal_volume": 0, "team_volume": 0}}
+        )
+        
+        await db.logs.insert_one({
+            "log_id": f"log_{uuid.uuid4().hex[:12]}",
+            "action": "scheduled_qualifications_checked",
+            "user_id": "system",
+            "details": {
+                "qualified": qualified_count,
+                "suspended": suspended_count,
+                "cancelled": cancelled_count
+            },
+            "created_at": now.isoformat()
+        })
+        
+        logger.info(f"Scheduled job: Qualifications checked - Qualified: {qualified_count}, Suspended: {suspended_count}, Cancelled: {cancelled_count}")
+    except Exception as e:
+        logger.error(f"Error in check_qualifications_job: {e}")
+
 # Lifespan
 @asynccontextmanager
 async def lifespan(app: FastAPI):
