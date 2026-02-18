@@ -1,14 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import DashboardLayout from '../components/layouts/DashboardLayout';
-import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import { Badge } from '../components/ui/Badge';
+import AppLayout, { StatCard } from '../components/layout/AppLayout';
 import { formatCurrency } from '../lib/utils';
 import { toast } from '../components/ui/toast';
 import { 
   Trophy, Medal, Award, TrendingUp, Users, 
-  DollarSign, Star, Crown, ChevronDown
+  DollarSign, Star, Crown
 } from 'lucide-react';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || '';
