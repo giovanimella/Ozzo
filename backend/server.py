@@ -882,6 +882,15 @@ async def update_user(
             update_data["blocked_balance"] = data.blocked_balance
         if data.points is not None:
             update_data["points"] = data.points
+        if data.supervisor_id is not None:
+            # Validate supervisor exists and is a supervisor (level 2)
+            if data.supervisor_id:
+                supervisor = await db.users.find_one({"user_id": data.supervisor_id})
+                if not supervisor:
+                    raise HTTPException(status_code=400, detail="Supervisor não encontrado")
+                if supervisor.get("access_level") != 2:
+                    raise HTTPException(status_code=400, detail="Usuário selecionado não é um supervisor")
+            update_data["supervisor_id"] = data.supervisor_id or None
     
     if not update_data:
         raise HTTPException(status_code=400, detail="Nenhum campo para atualizar")
