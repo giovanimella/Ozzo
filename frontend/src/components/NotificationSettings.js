@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 import { 
   isPushSupported, 
   getNotificationPermission, 
   subscribeToPush, 
   unsubscribeFromPush,
   getSubscriptionStatus
-} from '../../services/pushNotifications';
+} from '../services/pushNotifications';
 import { Bell, BellOff, Check, X, Loader2, Smartphone } from 'lucide-react';
-import { Button } from '../ui/Button';
-import { cn } from '../../lib/utils';
-import { toast } from '../ui/toast';
+import { Button } from './ui/Button';
+import { cn } from '../lib/utils';
+import { toast } from './ui/toast';
 
 export default function NotificationSettings({ className }) {
   const { token } = useAuth();
