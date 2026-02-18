@@ -739,7 +739,9 @@ async def create_product(request: Request, data: ProductCreate, user: dict = Dep
         "created_at": datetime.now(timezone.utc).isoformat()
     })
     
-    return product
+    # Re-fetch product without _id
+    product_response = await db.products.find_one({"product_id": product["product_id"]}, {"_id": 0})
+    return product_response
 
 @app.put("/api/products/{product_id}")
 async def update_product(request: Request, product_id: str, data: ProductCreate, user: dict = Depends(require_access_level(1))):
