@@ -3566,7 +3566,9 @@ async def create_conversation(request: Request, data: ConversationCreate, user: 
         {"url": f"/chat/{conversation_id}", "conversation_id": conversation_id}
     )
     
-    return {"conversation_id": conversation_id, "message": message}
+    # Re-fetch message without _id
+    message_response = await db.messages.find_one({"message_id": message["message_id"]}, {"_id": 0})
+    return {"conversation_id": conversation_id, "message": message_response}
 
 @app.get("/api/chat/conversations")
 async def list_conversations(request: Request, user: dict = Depends(get_current_user)):
