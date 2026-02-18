@@ -1,15 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import DashboardLayout from '../components/layouts/DashboardLayout';
-import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import { Badge } from '../components/ui/Badge';
+import AppLayout, { StatCard, DashCard } from '../components/layout/AppLayout';
 import { formatDate, formatDateTime } from '../lib/utils';
 import { toast } from '../components/ui/toast';
 import { 
   Link2, Copy, Share2, MousePointer, ShoppingCart,
-  TrendingUp, ExternalLink, ChevronLeft, ChevronRight,
-  QrCode, Download
+  TrendingUp, ChevronLeft, ChevronRight, Zap
 } from 'lucide-react';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || '';
